@@ -118,8 +118,8 @@
 
 	<scm>
 		<url>https://github.com/CrispOSS/abs-api-parent.git</url>
-		<connection>https://github.com/CrispOSS/abs-api-paret.git</connection>
-		<developerConnection>git@github.com:CrispOSS/abs-api-parent.git</developerConnection>
+		<connection>scm:git:https://github.com/CrispOSS/abs-api-paret.git</connection>
+		<developerConnection>scm:git:git@github.com:CrispOSS/abs-api-parent.git</developerConnection>
 	</scm>
 
 </project>
