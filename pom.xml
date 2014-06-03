@@ -11,6 +11,12 @@
 	<packaging>pom</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent</url>
 
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+
 	<licenses>
 		<license>
 			<name>Apache License 2.0</name>
@@ -20,18 +26,19 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.docs.directory>${project.build.directory}/docs</project.docs.directory>
 
 		<version.junit>4.11</version.junit>
+		<version.logback>1.1.2</version.logback>
+		<version.slf4j>1.7.7</version.slf4j>
 	</properties>
-	
+
 	<modules>
 		<module>../abs-api</module>
-		<module>../abs-api-docs</module>
 		<module>../abs-api-event</module>
 		<module>../abs-api-event-sample</module>
 		<module>../abs-api-remote</module>
 		<module>../abs-api-remote-sample</module>
+		<module>../abs-api-docs</module>
 	</modules>
 
 	<build>
@@ -72,6 +79,9 @@
 		</pluginManagement>
 	</build>
 
+	<dependencies>
+	</dependencies>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -80,8 +90,31 @@
 				<version>${version.junit}</version>
 				<scope>test</scope>
 			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${version.slf4j}</version>
+			</dependency>
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${version.logback}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<distributionManagement>
+		<repository>
+			<id>sonatype-nexus-staging</id>
+			<name>Nexus Staging Repository</name>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+		<snapshotRepository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<scm>
 		<url>https://github.com/CrispOSS/abs-api-parent.git</url>
