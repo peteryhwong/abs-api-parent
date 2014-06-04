@@ -8,7 +8,7 @@
 	<artifactId>abs-api-remote-sample</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<url>https://github.com/CrispOSS/abs-api-remote-sample</url>
+	<url>https://github.com/CrispOSS/abs-api-parent/tree/master/abs-api-remote-sample</url>
 
 	<parent>
 		<groupId>com.github.crisposs</groupId>
