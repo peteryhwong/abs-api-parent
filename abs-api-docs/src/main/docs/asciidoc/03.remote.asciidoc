@@ -1,0 +1,79 @@
+= ABS Remote API
+
+ABS API provides an extension modules to enable using actors in a distributed setting.
+In a distributed setting, each JVM instance contains a set of actors.
+The following properties holds when using the remote API:
+
+1. **Location Reference Transparency**: 
+Actors are blind to the location of the reference that they use to communicate with other actors. 
+Either in a local or remote setting, an actor may use an instance of `Reference` to refer to another actor.
+The referred actor may be local or remote and this is transparent for the calling actor.
+2. **Communication Transparency**:
+Actors send and receive messages.
+The transport of each message and how it is transferred to the receiver of the message is transparent to the sender of the message.
+The extension of ABS API provides a transparent way to provide a container of actors that can be accessed through HTTP.
+The communication of the messages through HTTP is handled by the Remote API implementation and abstracted from the user of the API.
+
+In the following, we provide a simple actor `Echo`:
+
+[source,java]
+.Echo.java
+----
+public class Echo implements Actor, Behavior {
+	private static final long serialVersionUID = 1L;
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final Integer index;
+
+	public Echo(Integer i) {
+		this.index = i;
+	}
+
+	@Override
+	public Object respond(Object message) {
+		logger.error("echo#{} --- message: {} --- from: {}", index, message, sender());
+		send(sender(), "an echo from " + index);
+		return null;
+	}
+}
+----
+
+To demonstrate how this actor can be used with ABS Remote API, we create two separate actor servers:
+
+[source,java]
+.Main1.java
+----
+public class Main1 {
+	public static void main(String[] args) throws UnknownHostException {
+		Properties props1 = new Properties();
+		props1.put("host", "localhost");
+		props1.put("port", "7777");
+		ActorServer server1 = new ActorServer(props1);
+		Echo e1 = new Echo(1);
+		Actor a1 = server1.context.newActor("echo-1", e1);
+		System.out.println(" === actor: " + a1.name());
+	}
+}
+----
+
+and also the second actor which is similar:
+
+[source,java]
+.Main2.java
+----
+public class Main2 {
+	public static void main(String[] args) throws UnknownHostException {
+		Properties props2 = new Properties();
+		props2.put("host", "localhost");
+		props2.put("port", "8888");
+		ActorServer server2 = new ActorServer(props2);
+		Echo e2 = new Echo(2);
+		Actor a2 = server2.context.newActor("echo-2", e2);
+		a2.send(Reference.from("abs://echo-1@http://localhost:7777"), "a msg from echo-2");
+	}
+}
+----
+
+As the result of running the program, you can follow a trace of remote message.
+Note that the API for the actors do not change and its part of transparent implementation in the server.
+A complete source of this example is available at: https://github.com/CrispOSS/abs-api-remote-sample
+

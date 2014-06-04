@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.github.crisposs</groupId>
+	<name>ABS API Documentation</name>
+	<artifactId>abs-api-docs</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<url>https://github.com/CrispOSS/abs-api-docs</url>
+	
+	<parent>
+		<groupId>com.github.crisposs</groupId>
+		<artifactId>abs-api-parent</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.docs.directory>${project.build.directory}/docs</project.docs.directory>
+
+		<version.asciidoctor>0.1.4</version.asciidoctor>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.asciidoctor</groupId>
+				<artifactId>asciidoctor-maven-plugin</artifactId>
+				<version>${version.asciidoctor}</version>
+				<executions>
+					<execution>
+						<id>output-html</id>
+						<phase>package</phase>
+						<goals>
+							<goal>process-asciidoc</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${basedir}/src/main/docs/asciidoc</sourceDirectory>
+							<outputDirectory>${project.docs.directory}/reference</outputDirectory>
+							<doctype>book</doctype>
+							<backend>html5</backend>
+							<sourceHighlighter>highlightjs</sourceHighlighter>
+							<attributes>
+								<docVersion>${project.version}</docVersion>
+								<doctype>book</doctype>
+								<icons>font</icons>
+								<toc2>true</toc2>
+								<toc-position>right</toc-position>
+								<setanchors>true</setanchors>
+								<numbered>true</numbered>
+								<idprefix>-</idprefix>
+								<idseparator>-</idseparator>
+							</attributes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+	</dependencies>
+
+</project>
+

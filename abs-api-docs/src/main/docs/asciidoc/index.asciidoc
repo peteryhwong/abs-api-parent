@@ -1,0 +1,8 @@
+= ABS API in Java 8
+Behrooz Nobakht <bnobakht@liacs.nl>
+{docVersion}
+
+include::01.introduction.asciidoc[]
+include::02.gettingstarted.asciidoc[]
+include::03.remote.asciidoc[]
+include::references.asciidoc[]
