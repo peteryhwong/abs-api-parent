@@ -26,12 +26,12 @@
 	</properties>
 
 	<modules>
-		<module>../abs-api</module>
-		<module>../abs-api-event</module>
-		<module>../abs-api-event-sample</module>
-		<module>../abs-api-remote</module>
-		<module>../abs-api-remote-sample</module>
-		<module>../abs-api-docs</module>
+		<module>abs-api</module>
+		<module>abs-api-event</module>
+		<module>abs-api-event-sample</module>
+		<module>abs-api-remote</module>
+		<module>abs-api-remote-sample</module>
+		<module>abs-api-docs</module>
 	</modules>
 
 	<build>
