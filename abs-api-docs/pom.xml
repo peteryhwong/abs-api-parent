@@ -24,6 +24,11 @@
 	</properties>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>${project.docs.directory}</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.asciidoctor</groupId>
@@ -32,7 +37,7 @@
 				<executions>
 					<execution>
 						<id>output-html</id>
-						<phase>package</phase>
+						<phase>generate-resources</phase>
 						<goals>
 							<goal>process-asciidoc</goal>
 						</goals>
