@@ -10,13 +10,6 @@
 	<packaging>pom</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent</url>
 
-	<!-- We use this parent to be able to automate release to Maven Central -->
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>9</version>
-	</parent>
-
 	<licenses>
 		<license>
 			<name>Apache License 2.0</name>
@@ -43,6 +36,25 @@
 	</modules>
 
 	<build>
+		<plugins>
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-gpg-plugin</artifactId>
+			  <version>1.5</version>
+			  <configuration>
+			  	<executable>gpg2</executable>
+			  </configuration>
+			  <executions>
+			    <execution>
+			      <id>sign-artifacts</id>
+			      <phase>verify</phase>
+			      <goals>
+			        <goal>sign</goal>
+			      </goals>
+			    </execution>
+			  </executions>
+			</plugin>					
+		</plugins>
 		<pluginManagement>
 			<plugins>
 				<plugin>
