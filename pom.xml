@@ -6,7 +6,7 @@
 	<groupId>com.github.crisposs</groupId>
 	<name>ABS API Parent</name>
 	<artifactId>abs-api-parent</artifactId>
-	<version>0.6.3-SNAPSHOT</version>
+	<version>0.6.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent</url>
 
@@ -147,7 +147,6 @@
 		<url>https://github.com/CrispOSS/abs-api-parent.git</url>
 		<connection>scm:git:https://github.com/CrispOSS/abs-api-paret.git</connection>
 		<developerConnection>scm:git:git@github.com:CrispOSS/abs-api-parent.git</developerConnection>
-		<tag>HEAD</tag>
 	</scm>
 
 </project>
