@@ -26,7 +26,7 @@ public final class LoggingConfiguration {
 
 		PatternLayoutEncoder encoder = new PatternLayoutEncoder();
 		encoder.setContext(context);
-		encoder.setPattern("[%d] [%5level] [%thread] - %msg \\(%logger{0}:%L\\) %n %ex");
+		encoder.setPattern("[%d] [%5level] [%thread]- %msg \\(%logger{0}:%L\\)%n%ex");
 		encoder.start();
 
 		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
