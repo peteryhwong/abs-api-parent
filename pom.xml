@@ -6,7 +6,7 @@
 	<groupId>com.github.crisposs</groupId>
 	<name>ABS API Parent</name>
 	<artifactId>abs-api-parent</artifactId>
-	<version>0.6.4-SNAPSHOT</version>
+	<version>0.6.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent</url>
 
@@ -59,10 +59,12 @@
 			  <artifactId>nexus-staging-maven-plugin</artifactId>
 			  <version>1.6.2</version>
 			  <extensions>true</extensions>
+			  <inherited>false</inherited>
 			  <configuration>
 			     <serverId>sonatype-nexus-staging</serverId>
 			     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
 			     <autoReleaseAfterClose>true</autoReleaseAfterClose>
+			     <stagingProfileId>56528f0b778564</stagingProfileId>
 			  </configuration>
 			</plugin>
 		</plugins>
@@ -144,7 +146,8 @@
 		<url>https://github.com/CrispOSS/abs-api-parent.git</url>
 		<connection>scm:git:https://github.com/CrispOSS/abs-api-paret.git</connection>
 		<developerConnection>scm:git:git@github.com:CrispOSS/abs-api-parent.git</developerConnection>
-	</scm>
+	  <tag>HEAD</tag>
+  </scm>
 
 </project>
 
