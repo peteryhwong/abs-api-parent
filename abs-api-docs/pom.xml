@@ -6,14 +6,14 @@
 	<groupId>com.github.crisposs</groupId>
 	<name>ABS API Documentation</name>
 	<artifactId>abs-api-docs</artifactId>
-	<version>0.7-SNAPSHOT</version>
+	<version>0.6.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent/tree/master/abs-api-docs</url>
 	
 	<parent>
 		<groupId>com.github.crisposs</groupId>
 		<artifactId>abs-api-parent</artifactId>
-		<version>0.7-SNAPSHOT</version>
+		<version>0.6.2-SNAPSHOT</version>
 	</parent>
 
 	<properties>
