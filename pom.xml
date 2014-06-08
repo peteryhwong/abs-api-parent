@@ -9,7 +9,12 @@
 	<artifactId>abs-api-parent</artifactId>
 	<version>0.6.6-SNAPSHOT</version>
 	<packaging>pom</packaging>
+	
 	<url>https://github.com/CrispOSS/abs-api-parent</url>
+	<description><![CDATA[
+	ABS API is an Actor Model implementation in Java 8.
+	]]>
+	</description>
 
 	<licenses>
 		<license>
@@ -177,5 +182,14 @@
 			</build>
 		</profile>
 	</profiles>
+	
+	<developers>
+		<developer>
+			<id>nobeh</id>
+			<email>nobeh5@gmail.com</email>
+			<name>Behrooz Nobakht</name>
+			<timezone>+1</timezone>
+		</developer>
+	</developers>
 </project>
 
