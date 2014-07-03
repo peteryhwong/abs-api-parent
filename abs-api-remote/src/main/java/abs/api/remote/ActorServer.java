@@ -2,13 +2,19 @@ package abs.api.remote;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.Properties;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
-import org.glassfish.jersey.jetty.JettyHttpContainerFactory;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.ThreadPool;
+import org.glassfish.jersey.jetty.JettyHttpContainer;
+import org.glassfish.jersey.jetty.JettyHttpContainerProvider;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +41,14 @@ public class ActorServer implements Lifecycle {
 
 	public final Context context;
 
-	public ActorServer(Properties properties) throws UnknownHostException {
+	public ActorServer(Properties properties) throws Exception {
 		host = properties
 				.getProperty("host", InetAddress.getLocalHost().getCanonicalHostName());
 		port = Integer.valueOf(properties.getProperty("port", "7777"));
 		uri = UriBuilder.fromUri("http://" + host).port(port).build();
 		application = new ContextApplication(uri);
 		ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
-		server = JettyHttpContainerFactory.createServer(uri, resourceConfig, true);
+		server = createServer(resourceConfig, uri);
 		context = application.context;
 		logger.info("ABS Actor Context started on: {}", uri);
 	}
@@ -69,7 +75,29 @@ public class ActorServer implements Lifecycle {
 	public void initialize() throws Exception {
 	}
 
-	public static void main(String[] args) throws UnknownHostException {
+	/**
+	 * @param resourceConfig
+	 * @param uri
+	 * @return
+	 * @throws Exception
+	 */
+	protected Server createServer(ResourceConfig resourceConfig, URI uri) throws Exception {
+		ThreadPool pool = new QueuedThreadPool(1024, 16);
+		Server server = new Server(pool);
+		HttpConfiguration http = new HttpConfiguration();
+		ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(http));
+		connector.setPort(uri.getPort());
+		server.setConnectors(new Connector[] { connector });
+
+		JettyHttpContainerProvider containerProvider = new JettyHttpContainerProvider();
+		JettyHttpContainer handler = containerProvider.createContainer(
+				JettyHttpContainer.class, resourceConfig);
+		server.setHandler(handler);
+		server.start();
+		return server;
+	}
+
+	public static void main(String[] args) throws Exception {
 		new ActorServer(System.getProperties());
 	}
 

@@ -1,6 +1,5 @@
 package abs.api.remote.sample;
 
-import java.net.UnknownHostException;
 import java.util.Properties;
 
 import abs.api.Actor;
@@ -11,7 +10,7 @@ import abs.api.remote.ActorServer;
  */
 public class Main1 {
 
-	public static void main(String[] args) throws UnknownHostException {
+	public static void main(String[] args) throws Exception {
 
 		Properties props1 = new Properties();
 		props1.put("host", "localhost");
