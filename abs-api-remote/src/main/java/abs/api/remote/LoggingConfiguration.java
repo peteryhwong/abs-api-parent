@@ -18,6 +18,8 @@ public final class LoggingConfiguration {
 
 	static {
 
+		final Boolean enableDebugMode = Boolean.getBoolean("abs.debug");
+
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
@@ -26,7 +28,7 @@ public final class LoggingConfiguration {
 
 		PatternLayoutEncoder encoder = new PatternLayoutEncoder();
 		encoder.setContext(context);
-		encoder.setPattern("[%d] [%5level] [%thread]- %msg \\(%logger{0}:%L\\)%n%ex");
+		encoder.setPattern("[%d] [%5level] [%thread] %msg \\(%logger{0}:%L\\)%n%ex");
 		encoder.start();
 
 		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
@@ -36,14 +38,14 @@ public final class LoggingConfiguration {
 		appender.start();
 
 		Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-		logger.setLevel(Level.INFO);
+		logger.setLevel(enableDebugMode ? Level.DEBUG : Level.INFO);
 		logger.addAppender(appender);
 
 		logger = (Logger) LoggerFactory.getLogger("org.eclipse.jetty");
-		logger.setLevel(Level.ERROR);
+		logger.setLevel(enableDebugMode ? Level.INFO : Level.ERROR);
 
 		logger = (Logger) LoggerFactory.getLogger("org.glassfish.jersey");
-		logger.setLevel(Level.ERROR);
+		logger.setLevel(enableDebugMode ? Level.INFO : Level.ERROR);
 
 		context.start();
 	}
