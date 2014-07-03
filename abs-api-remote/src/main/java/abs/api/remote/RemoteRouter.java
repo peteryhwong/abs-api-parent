@@ -9,6 +9,7 @@ import java.net.URLDecoder;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -18,6 +19,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +74,8 @@ public class RemoteRouter implements Router {
 		}
 
 		public void send() {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+			try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(envelope.message());
 				Entity<InputStream> message = Entity.entity(
 						new ByteArrayInputStream(baos.toByteArray()),
@@ -81,7 +85,8 @@ public class RemoteRouter implements Router {
 				String to = Reference.encode(envelope.to());
 
 				WebTarget path = target.path("actors").path(to).path(from);
-				logger.info("Routing to {}", URLDecoder.decode(path.getUri().toString(), "UTF-8"));
+				logger.debug("Routing to {}",
+						URLDecoder.decode(path.getUri().toString(), "UTF-8"));
 
 				Response response = path.request().accept(MediaType.TEXT_PLAIN)
 						.put(message, Response.class);
@@ -102,7 +107,7 @@ public class RemoteRouter implements Router {
 				}
 			} catch (Exception e) {
 				// TODO
-				logger.error(e.toString());
+				logger.error("Failed to send remote message to {}: {}", envelope.to(), e);
 			}
 		}
 
@@ -134,7 +139,12 @@ public class RemoteRouter implements Router {
 		if (target != null) {
 			return target;
 		}
-		Client client = ClientBuilder.newClient();
+		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+		Integer timeout = Long.valueOf(TimeUnit.MINUTES.toMillis(10)).intValue();
+		ClientConfig cc = new ClientConfig().property(ClientProperties.READ_TIMEOUT, timeout)
+				.property(ClientProperties.CONNECT_TIMEOUT, timeout)
+				.connectorProvider(new HttpUrlConnectorProvider().useSetMethodWorkaround());
+		Client client = ClientBuilder.newClient(cc);
 		target = client.target(uri);
 		targets.put(uri, target);
 		return target;

@@ -58,6 +58,7 @@ public class ContextResource {
 			Actor actor = (Actor) context.notary().identify(target);
 			return new ActorResource(context, actor);
 		} catch (UnsupportedEncodingException e) {
+			logger.error("No actor found: {}", to);
 			throw new RuntimeException(e);
 		}
 	}

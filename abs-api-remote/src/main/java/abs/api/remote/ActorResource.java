@@ -14,6 +14,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import abs.api.Actor;
 import abs.api.Context;
 import abs.api.Envelope;
@@ -25,6 +28,8 @@ import abs.api.SimpleEnvelope;
  */
 @Provider
 public class ActorResource {
+
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final Context context;
 	private final Actor actor;
@@ -42,11 +47,15 @@ public class ActorResource {
 		try {
 			Reference sender = Reference.decode(from);
 			Object message = readObject(msg);
+			logger.debug("Received a message from {} to {}: {}", sender, this.actor, message);
 			Envelope e = new SimpleEnvelope(sender, actor, message);
 			context.router().route(e);
+			logger.debug("Remote envelope sent to {} from {}", this.actor.toString(),
+					sender.toString());
 			return Response.ok(sender.toString(), MediaType.TEXT_PLAIN).build();
 		} catch (Exception e) {
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+			return Response.status(Status.INTERNAL_SERVER_ERROR).type(MediaType.TEXT_PLAIN)
+					.entity(e.toString()).build();
 		}
 	}
 
