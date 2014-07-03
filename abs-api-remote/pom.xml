@@ -19,8 +19,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<version.jersey>2.9</version.jersey>
-		<version.jetty>9.1.4.v20140401</version.jetty>
+		<version.jersey>2.10.1</version.jersey>
+		<version.jetty>9.2.1.v20140609</version.jetty>
 	</properties>
 
 	<build>
