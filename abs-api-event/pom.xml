@@ -19,7 +19,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<version.reactor>1.1.3.RELEASE</version.reactor>
+		<version.reactor>1.1.5.RELEASE</version.reactor>
 	</properties>
 
 	<build>

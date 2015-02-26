@@ -20,7 +20,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.docs.directory>${project.build.directory}/docs</project.docs.directory>
 
-		<version.asciidoctor>0.1.4</version.asciidoctor>
+		<version.asciidoctor>1.5.2</version.asciidoctor>
 	</properties>
 
 	<build>
