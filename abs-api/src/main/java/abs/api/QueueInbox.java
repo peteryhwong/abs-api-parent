@@ -26,7 +26,7 @@ public class QueueInbox extends AbstractInbox {
 	 *            a {@link java.util.concurrent.ExecutorService} object.
 	 */
 	public QueueInbox(ExecutorService executor) {
-		this.opener = new QueueOpener(new PriorityBlockingQueue<>(4096), executor);
+		this.opener = new QueueOpener(new PriorityBlockingQueue<>(8192), executor);
 	}
 
 	/** {@inheritDoc} */

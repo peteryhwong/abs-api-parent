@@ -6,11 +6,15 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -42,6 +46,7 @@ public class RemoteRouter implements Router {
 
 		private final Envelope envelope;
 		private final WebTarget target;
+		private Future<Response> response;
 
 		public RemoteEnvelope(Envelope envelope, WebTarget target) {
 			this.envelope = envelope;
@@ -65,6 +70,34 @@ public class RemoteRouter implements Router {
 
 		@Override
 		public <T extends Future<?>> T response() {
+			final CompletableFuture<?> cf = envelope.response();
+			try {
+				final Response result = this.response.get(30, TimeUnit.SECONDS);
+				Status status = Status.fromStatusCode(result.getStatus());
+				logger.debug("Route result: {}", status);
+				switch (status) {
+				case OK:
+					return envelope.response();
+				case BAD_REQUEST:
+					cf.completeExceptionally(new IllegalArgumentException("Invalid message: "
+							+ result.readEntity(String.class)));
+				case NOT_FOUND:
+					cf.completeExceptionally(new IllegalArgumentException(
+							"Remote actor not found: " + result.readEntity(String.class)));
+				default:
+					cf.completeExceptionally(new IllegalStateException("Unknown error: "
+							+ status + " : " + result.readEntity(String.class)));
+				}
+				result.close();
+			} catch (InterruptedException e) {
+				cf.completeExceptionally(e);
+			} catch (ExecutionException e) {
+				cf.completeExceptionally(e);
+			} catch (TimeoutException e) {
+				cf.completeExceptionally(e);
+			} catch (ProcessingException e) {
+				// ignore for closing result response
+			}
 			return envelope.response();
 		}
 
@@ -88,25 +121,10 @@ public class RemoteRouter implements Router {
 				logger.debug("Routing to {}",
 						URLDecoder.decode(path.getUri().toString(), "UTF-8"));
 
-				Response response = path.request().accept(MediaType.TEXT_PLAIN)
+				this.response = path.request().accept(MediaType.TEXT_PLAIN).async()
 						.put(message, Response.class);
-				Status status = Status.fromStatusCode(response.getStatus());
-				logger.debug("Route result: {}", status);
-				switch (status) {
-				case OK:
-					return;
-				case BAD_REQUEST:
-					throw new IllegalArgumentException("Invalid message: "
-							+ response.readEntity(String.class));
-				case NOT_FOUND:
-					throw new IllegalArgumentException("Remote actor not found: "
-							+ response.readEntity(String.class));
-				default:
-					throw new IllegalStateException("Unknown error: " + status + " : "
-							+ response.readEntity(String.class));
-				}
 			} catch (Exception e) {
-				// TODO
+				((CompletableFuture<?>) envelope.response()).completeExceptionally(e);
 				logger.error("Failed to send remote message to {}: {}", envelope.to(), e);
 			}
 		}

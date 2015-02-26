@@ -89,18 +89,18 @@ class QueueOpener extends DefaultOpener {
 			this.executor = executor;
 		}
 
-		protected void tryExecuteNext() {
+		protected synchronized void tryExecuteNext() {
 			completeCurrent();
 			executeNext();
 		}
 
-		protected void completeCurrent() {
+		protected synchronized void completeCurrent() {
 			if (!busy.compareAndSet(true, false)) {
 				throw new IllegalStateException("Should have been busy!");
 			}
 		}
 
-		protected void executeNext() {
+		protected synchronized void executeNext() {
 			if (!busy.compareAndSet(false, true)) {
 				return;
 			}
