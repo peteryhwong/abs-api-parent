@@ -6,14 +6,14 @@
 	<groupId>com.github.crisposs</groupId>
 	<name>ABS API Event Sample</name>
 	<artifactId>abs-api-event-sample</artifactId>
-	<version>0.8.1</version>
+	<version>0.9-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent/tree/master/abs-api-event-sample</url>
 
 	<parent>
 		<groupId>com.github.crisposs</groupId>
 		<artifactId>abs-api-parent</artifactId>
-		<version>0.8.1</version>
+		<version>0.9-SNAPSHOT</version>
 	</parent>
 
 	<properties>
