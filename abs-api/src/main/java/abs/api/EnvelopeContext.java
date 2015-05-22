@@ -82,6 +82,11 @@ public interface EnvelopeContext extends Context {
 		public Opener opener(Reference reference) {
 			return context.opener(reference);
 		}
+		
+		@Override
+		public void execute(Runnable command) {
+		  context.execute(command);
+		}
 
 	}
 

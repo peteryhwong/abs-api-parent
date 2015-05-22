@@ -2,7 +2,6 @@ package abs.api;
 
 import java.net.URI;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
 /**
@@ -125,7 +124,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 	default <V> Future<V> ask(Actor to, Object message) {
 		final Actor receiver = NOBODY.equals(to) ? (Actor) reference(to) : to;
 		final Envelope envelope = new SimpleEnvelope(self(), receiver, message);
-		ForkJoinPool.commonPool().execute(() -> context().router().route(envelope));
+		context().execute(() -> context().router().route(envelope));
 		return envelope.response();
 	}
 
@@ -144,7 +143,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 	default <V> Future<V> send(Reference to, Object message) {
 		final Reference from = self();
 		final Envelope envelope = new SimpleEnvelope(from, to, message);
-		ForkJoinPool.commonPool().execute(() -> context().router().route(envelope));
+		context().execute(() -> context().router().route(envelope));
 		return envelope.response();
 	}
 

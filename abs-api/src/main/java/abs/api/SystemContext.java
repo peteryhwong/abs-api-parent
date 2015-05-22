@@ -1,5 +1,7 @@
 package abs.api;
 
+import java.util.concurrent.ForkJoinPool;
+
 /**
  * A system context is an entry-point to an actor context. The default
  * constructor creates a context with default configuration.
@@ -14,6 +16,19 @@ public class SystemContext implements Context, Contextual {
 
 	public static Context context() {
 		return context;
+	}
+	
+	static {
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        if (context() != null) {
+          try {
+            context().stop();
+            ForkJoinPool.commonPool().shutdown();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+      } , "context-shutdown"));
 	}
 
 	/**
@@ -52,6 +67,12 @@ public class SystemContext implements Context, Contextual {
 	@Override
 	public Opener opener(Reference reference) {
 		return context.opener(reference);
+	}
+	
+	/** {@inheritDoc} */
+	@Override
+	public void execute(Runnable command) {
+	  context.execute(command);
 	}
 
 	/** {@inheritDoc} */

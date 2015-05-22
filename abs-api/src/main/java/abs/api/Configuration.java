@@ -1,5 +1,8 @@
 package abs.api;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * An configuration specifies different ingredients of an instance of
  * {@link abs.api.Context} to be created.
@@ -49,6 +52,11 @@ public interface Configuration {
 	 * @return the {@link ReferenceFactory} of the context
 	 */
 	ReferenceFactory getReferenceFactory();
+	
+	/**
+	 * @return
+	 */
+	ExecutorService geExecutorService();
 
 	/**
 	 * Creates an instance of
@@ -72,6 +80,7 @@ public interface Configuration {
 		private Inbox inbox = new AsyncInbox();
 		private Class<? extends Notary> notaryClass = LocalNotary.class;
 		private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
+		private ExecutorService executorService = Executors.newCachedThreadPool();
 
 		ConfigurationBuilder() {
 		}
@@ -100,10 +109,15 @@ public interface Configuration {
 			this.referenceFactory = referenceFactory;
 			return this;
 		}
+		
+		public ConfigurationBuilder withExecutorService(ExecutorService executorService) {
+		  this.executorService = executorService;
+		  return this;
+		}
 
 		public Configuration build() {
 			return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, notaryClass,
-					referenceFactory);
+					referenceFactory, executorService);
 		}
 
 		private static class SimpleConfiguration implements Configuration {
@@ -113,15 +127,17 @@ public interface Configuration {
 			private final Inbox inbox;
 			private final Class<? extends Notary> notaryClass;
 			private final ReferenceFactory referenceFactory;
+			private final ExecutorService executorService;
 
 			public SimpleConfiguration(Router envelopeRouter, Opener envelopeOpener,
 					Inbox inbox, Class<? extends Notary> notaryClass,
-					ReferenceFactory referenceFactory) {
+					ReferenceFactory referenceFactory, ExecutorService executorService) {
 				this.envelopeRouter = envelopeRouter;
 				this.envelopeOpener = envelopeOpener;
 				this.inbox = inbox;
 				this.notaryClass = notaryClass;
 				this.referenceFactory = referenceFactory;
+                this.executorService = executorService;
 			}
 
 			@Override
@@ -147,6 +163,11 @@ public interface Configuration {
 			@Override
 			public ReferenceFactory getReferenceFactory() {
 				return referenceFactory;
+			}
+			
+			@Override
+			public ExecutorService geExecutorService() {
+			  return executorService;
 			}
 
 		}

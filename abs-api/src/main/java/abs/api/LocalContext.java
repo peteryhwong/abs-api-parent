@@ -3,8 +3,6 @@ package abs.api;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
@@ -64,7 +62,7 @@ public class LocalContext implements Context {
 	@PostConstruct
 	@Override
 	public void initialize() throws Exception {
-		this.executor = Executors.newWorkStealingPool();
+		this.executor = configuration.geExecutorService();
 
 		if (configuration.getRouter() != null) {
 			this.router = configuration.getRouter();
@@ -162,13 +160,18 @@ public class LocalContext implements Context {
 	public Inbox inbox(Reference reference) {
 		return inbox;
 	}
+	
+	/** {@inheritDoc} */
+	@Override
+	public void execute(Runnable command) {
+	  executor.execute(command);
+	}
 
 	/** {@inheritDoc} */
 	@Override
 	public void stop() throws Exception {
 		notary.stop();
 		try {
-			executor.awaitTermination(5, TimeUnit.SECONDS);
 			executor.shutdownNow();
 		} catch (Exception e) {
 		}

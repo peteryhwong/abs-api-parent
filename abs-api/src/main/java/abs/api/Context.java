@@ -1,5 +1,6 @@
 package abs.api;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 /**
@@ -32,7 +33,7 @@ import java.util.concurrent.Future;
  * @author Behrooz Nobakht
  * @since 1.0
  */
-public interface Context extends Lifecycle {
+public interface Context extends Lifecycle, Executor {
 
 	/**
 	 * Creates an instance of {@link Actor} with the provided name and
