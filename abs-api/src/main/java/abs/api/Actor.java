@@ -9,10 +9,8 @@ import java.util.concurrent.Future;
  * messages to another actor. There are a number of ways that a message
  * would have meaning as an executable entity in this implementation:
  * <ul>
- * <li>a method invocation exposed by
- * {@link #invoke(Actor, String, Object...)}
  * <li>an instance of {@link Runnable} or {@link Callable} exposed by
- * {@link #ask(Actor, Object)}
+ * {@link #ask(Object, Object)}
  * <li>the recipient of the message is an instance of {@link Behavior}
  * which leads to running {@link Behavior#respond(Object)}
  * </ul>
@@ -100,92 +98,70 @@ public interface Actor extends Reference, Comparable<Reference> {
 		return SystemContext.context();
 	}
 
-	/**
-	 * Sends a general message to a recipient and captures the result
-	 * into an instance of {@link Future}.
-	 * 
-	 * @see Context
-	 * @see Router
-	 * 
-	 * @param <V>
-	 *            the type of the result expected from the future value
-	 * @param to
-	 *            the receiver of the message
-	 * @param message
-	 *            the message to be sent to the receiver
-	 * @return a future value to capture the result of processing the
-	 *         message. The future value may throw exception is
-	 *         {@link Future#get()} is used as a result of either
-	 *         failure in processing the message or actually the
-	 *         processing of the message decided to fail the message
-	 *         result. The user of the future value may inspect into
-	 *         causes of the exception to identify the reasons.
-	 */
-	default <V> Future<V> ask(Actor to, Object message) {
-		final Actor receiver = NOBODY.equals(to) ? (Actor) reference(to) : to;
-		final Envelope envelope = new SimpleEnvelope(self(), receiver, message);
-		context().execute(() -> context().router().route(envelope));
-		return envelope.response();
-	}
+    /**
+     * Sends a general message to a recipient and captures the
+     * result into an instance of {@link Future}.
+     * 
+     * @see Context
+     * @see Router
+     * 
+     * @param <V> the type of the result expected from the future
+     *        value
+     * @param to the receiver of the message
+     * @param message the message to be sent to the receiver
+     * @return a future value to capture the result of processing
+     *         the message. The future value may throw exception
+     *         is {@link Future#get()} is used as a result of
+     *         either failure in processing the message or
+     *         actually the processing of the message decided to
+     *         fail the message result. The user of the future
+     *         value may inspect into causes of the exception to
+     *         identify the reasons.
+     * @throws RuntimeException if the response {@link Future}
+     *         fails. In this case, the cause is wrapped inside
+     *         the thrown exception.
+     */
+    default <V> V ask(Object to, Object message) {
+      try {
+        final Future<V> response = send(to, message);
+        return response.get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
 
-	/**
-	 * Sends a message to a reference.
-	 *
-	 * @param <V>
-	 *            the type of the future value of the response of the
-	 *            message
-	 * @param to
-	 *            the receiver of the message
-	 * @param message
-	 *            the message itself
-	 * @return the future value to capture the result of the message
-	 */
-	default <V> Future<V> send(Reference to, Object message) {
-		final Reference from = self();
-		final Envelope envelope = new SimpleEnvelope(from, to, message);
-		context().execute(() -> context().router().route(envelope));
-		return envelope.response();
-	}
-
-	/**
-	 * A convenient method to ask a method invocation from this actor
-	 * reference. Delegates to {@link #invoke(Actor, String, Object...)}
-	 * with {@code this} parameter.
-	 * 
-	 * @param <V>
-	 *            the type of the result expected from the future value
-	 * @param method
-	 *            the name of the method to be invoked
-	 * @param args
-	 *            the actual parameters of the method
-	 * @return a future value to capture the result (see
-	 *         {@link #ask(Actor, Object)})
-	 */
-	default <V> Future<V> ask(String method, Object... args) {
-		return invoke(this, method, args);
-	}
-
-	/**
-	 * Sends a message to the recipient to invoke a specific method with
-	 * specific arguments expected in the receiver object. Delegates to
-	 * {@link #ask(Actor, Object)} with an instance of
-	 * {@link MethodReference} by default.
-	 * 
-	 * @param <V>
-	 *            the type of the result expected from the future value
-	 * @param to
-	 *            the receiver of the message to invoke the method
-	 * @param method
-	 *            the name of the method to be invoked
-	 * @param args
-	 *            the actual parameters of method to execute
-	 * @return a future value to capture the result (see
-	 *         {@link #ask(Actor, Object)})
-	 */
-	default <V> Future<V> invoke(Actor to, String method, Object... args) {
-		final MethodReference message = MethodReference.of(to, method, args);
-		return ask(to, message);
-	}
+    /**
+     * Sends a message to a reference.
+     *
+     * @param <V> the type of the future value of the response of
+     *        the message
+     * @param to the receiver of the message that can be either
+     *        the {@link Reference} to the receiver or the object
+     *        itself
+     * @param message the message itself
+     * @return the future value to capture the result of the
+     *         message
+     */
+    default <V> Future<V> send(Object to, Object message) {
+      final Reference from = self();
+      final Reference toRef = reference(to);
+      final Envelope envelope = new SimpleEnvelope(from, toRef, message);
+      context().execute(() -> context().router().route(envelope));
+      return envelope.response();
+    }
+    
+    /**
+     * Replies to the {@link #sender()} of this message with
+     * another message.
+     * 
+     * @param message the reply message
+     * @param <V> The expected type of the response
+     * @return the response of the reply message
+     */
+    default <V> Future<V> reply(Object message) {
+      Future<V> response = send(sender(), message);
+      return response;
+    }
 
 	/**
 	 * Provides access to the reference registered for this actor
@@ -211,7 +187,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 	 * @return the sender of the current message or {@link #NOBODY} if
 	 *         there is no sender for this message
 	 */
-	default Reference sender() {
+	default Reference senderReference() {
 		try {
 			final Reference ref = self();
 			if (ref instanceof ContextActor) {
@@ -232,6 +208,19 @@ public interface Actor extends Reference, Comparable<Reference> {
 		}
 		return NOBODY;
 	}
+	
+    /**
+     * Provides access to the sender object of the current
+     * message.
+     * 
+     * @see #senderReference()
+     * @param <T> The expected type of the sender object
+     * @return the sender object of the current processes message
+     *         with expected type <code>T</code>
+     */
+    default <T> T sender() {
+      return object(senderReference());
+    }
 	
 	/**
 	 * Delegates to {@link Context#object(Reference)}.

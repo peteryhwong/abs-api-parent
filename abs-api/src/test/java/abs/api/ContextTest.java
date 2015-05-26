@@ -25,9 +25,9 @@ public class ContextTest {
 	public void tesetSendMessageOutsideActor() throws Exception {
 		LocalContext context = new LocalContext();
 		final MyActor actor = new MyActor();
-		final Actor ref = context.newActor("myActor", actor);
+		context.newActor("myActor", actor);
 		Callable<Double> message = () -> actor.doIt(10);
-		Future<?> result = context.send(ref, message);
+		Future<?> result = context.send(actor, message);
 		assertNotNull(result);
 		assertNotNull(result.get());
 		assertEquals(Double.class, result.get().getClass());

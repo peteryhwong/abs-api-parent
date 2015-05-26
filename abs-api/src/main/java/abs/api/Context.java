@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
  * <ul>
  * <li>an {@link Router} responsible to route the messages to their
  * recipients. Routing of a message starts from
- * {@link Actor#ask(Actor, Object)} that delegates to its bound context.
+ * {@link Actor#ask(Object, Object)} that delegates to its bound context.
  * <li>a {@link Notary} that acts as a registry of actor references and
  * object in the concurrent system.
  * <li>possibly a set of {@link Inbox} instances each of which (or
@@ -124,7 +124,7 @@ public interface Context extends Lifecycle, Executor {
 	 * actor uses {@link Actor#sender()}, it leads an exception because
 	 * the sender is not known.
 	 * 
-	 * @see Actor#send(Reference, Object)
+	 * @see Actor#send(Object, Object)
 	 * 
 	 * @param to
 	 *            the recipient actor reference

@@ -8,7 +8,7 @@ package abs.api;
  * .
  * 
  * <p>
- * The interface can be used in {@link Actor#ask(Actor, Object)}
+ * The interface can be used in {@link Actor#ask(Object, Object)}
  * knowing that the receiver of the message is a behavior and can
  * respond to a general message.
  * 

@@ -16,8 +16,8 @@ public class ContextActorReferenceTest {
 	public void beforeTheFirstMessageNoSenderIsAvailable() throws Exception {
 		Context context = new LocalContext();
 		Actor b = context.newActor("b", new Object());
-		assertNotNull(b.sender());
-		assertEquals(Actor.NOBODY, b.sender());
+		assertNotNull(b.senderReference());
+		assertEquals(Actor.NOBODY, b.senderReference());
 	}
 
 	@Test
@@ -28,14 +28,14 @@ public class ContextActorReferenceTest {
 		Actor a = context.newActor("a", objA);
 		Actor b = context.newActor("b", objB);
 		MethodReference method = MethodReference.of(b, "hashcode");
-		assertEquals(Actor.NOBODY, b.sender());
+		assertEquals(Actor.NOBODY, b.senderReference());
 
 		Envelope envelope = new SimpleEnvelope(context.reference(objA),
 				context.reference(objB), method);
 		AbstractInbox inbox = new AbstractInbox();
 		inbox.bind(context);
 		inbox.onOpen(envelope, null, null);
-		assertEquals(a.name(), b.sender().name());
+		assertEquals(a.name(), b.senderReference().name());
 	}
 
 }

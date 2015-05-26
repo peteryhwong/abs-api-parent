@@ -54,7 +54,7 @@ public interface Configuration {
 	ReferenceFactory getReferenceFactory();
 	
 	/**
-	 * @return
+	 * @return the {@link ExecutorService} of the context
 	 */
 	ExecutorService geExecutorService();
 
