@@ -38,12 +38,14 @@ REL_VERSION="$1"
 DEV_VERSION="$2"
 GPG_PASS="$3"
 # GPG keyname for 'nobeh'
-GPG_KEYNAME="${4:9078345E}"
+GPG_KEYNAME="${4:-9078345E}"
+REL_TAG="abs-api-${REL_VERSION}"
 
 mvn clean
-mvn -Prelease release:prepare -DreleaseVersion="${REL_VERSION}" -DdevelopmentVersion="${DEV_VERSION}" -Darguments="-Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}"
-mvn -Prelease release:perform -DreleaseVersion="${REL_VERSION}" -DdevelopmentVersion="${DEV_VERSION}" -Darguments="-Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}"
+mvn -Prelease release:prepare -DreleaseVersion="${REL_VERSION}" -DdevelopmentVersion="${DEV_VERSION}" -Dtag=${REL_TAG} -Darguments="-Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}"
+mvn -Prelease release:perform -DreleaseVersion="${REL_VERSION}" -DdevelopmentVersion="${DEV_VERSION}" -Dtag=${REL_TAG} -Darguments="-Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}"
 mvn -Prelease deploy -Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}
 
 echo "Released version:       ${REL_VERSION}"
+echo "Release tag:            ${REL_TAG}"
 echo "Development version:    ${DEV_VERSION}"
