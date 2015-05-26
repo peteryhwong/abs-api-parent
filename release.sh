@@ -39,7 +39,7 @@ DEV_VERSION="$2"
 GPG_PASS="$3"
 # GPG keyname for 'nobeh'
 GPG_KEYNAME="${4:-9078345E}"
-REL_TAG="abs-api-${REL_VERSION}"
+REL_TAG="v${REL_VERSION}"
 
 mvn clean
 mvn -Prelease release:prepare -DreleaseVersion="${REL_VERSION}" -DdevelopmentVersion="${DEV_VERSION}" -Dtag=${REL_TAG} -Darguments="-Dgpg.passphrase=${GPG_PASS} -Dgpg.keyname=${GPG_KEYNAME}"
