@@ -23,7 +23,7 @@ public class Main {
 
 	}
 
-	public void start() {
+	public void start() throws Exception {
 		a1.ask(a2, "a random message");
 	}
 

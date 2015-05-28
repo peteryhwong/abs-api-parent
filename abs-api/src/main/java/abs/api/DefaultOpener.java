@@ -64,7 +64,7 @@ public class DefaultOpener implements Opener {
 		} else {
 			try {
 				executeEnvelopeTask(task);
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				future.completeExceptionally(e);
 			}
 		}
@@ -118,15 +118,7 @@ public class DefaultOpener implements Opener {
 	 * @return a {@link java.lang.Runnable} object.
 	 */
 	protected Runnable fromCallableEnvelope(final Envelope envelope) {
-		return () -> {
-			final Fut future = envelope.response();
-			try {
-				final Object result = ((Callable<?>) envelope.message()).call();
-				future.complete(result);
-			} catch (Exception e) {
-				future.completeExceptionally(e);
-			}
-		};
+	  return new CompletableCallableEnvelope(envelope);
 	}
 
 	/**
@@ -139,15 +131,7 @@ public class DefaultOpener implements Opener {
 	 * @return a {@link java.lang.Runnable} object.
 	 */
 	protected Runnable fromRunnableEnvelope(final Envelope envelope) {
-		return () -> {
-			final Fut future = envelope.response();
-			try {
-				((Runnable) envelope.message()).run();
-				future.complete(null);
-			} catch (Exception e) {
-				future.completeExceptionally(e);
-			}
-		};
+	  return new CompletableRunnableEnvelope(envelope);
 	}
 
 	/**

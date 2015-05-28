@@ -170,9 +170,9 @@ public class LocalContext implements Context {
 	/** {@inheritDoc} */
 	@Override
 	public void stop() throws Exception {
-		notary.stop();
 		try {
 			executor.shutdownNow();
+			ContextThread.shutdown();
 		} catch (Exception e) {
 		}
 	}

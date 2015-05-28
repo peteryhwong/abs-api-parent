@@ -2,6 +2,7 @@ package abs.api;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * An configuration specifies different ingredients of an instance of
@@ -13,7 +14,6 @@ import java.util.concurrent.Executors;
  *
  * @author Behrooz Nobakht
  * @since 1.0
- * @version $Id: $Id
  */
 public interface Configuration {
 
@@ -57,6 +57,11 @@ public interface Configuration {
 	 * @return the {@link ExecutorService} of the context
 	 */
 	ExecutorService geExecutorService();
+	
+	/**
+	 * @return the {@link ThreadFactory} of the context
+	 */
+	ThreadFactory geThreadFactory();
 
 	/**
 	 * Creates an instance of
@@ -80,7 +85,8 @@ public interface Configuration {
 		private Inbox inbox = new AsyncInbox();
 		private Class<? extends Notary> notaryClass = LocalNotary.class;
 		private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
-		private ExecutorService executorService = Executors.newCachedThreadPool();
+		private ThreadFactory threadFactory = r -> new ContextThread(r);
+		private ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
 
 		ConfigurationBuilder() {
 		}
@@ -114,10 +120,16 @@ public interface Configuration {
 		  this.executorService = executorService;
 		  return this;
 		}
+		
+		public ConfigurationBuilder withThreadFactory(ThreadFactory threadFactory) {
+		  this.executorService = Executors.newCachedThreadPool(threadFactory);
+		  this.threadFactory = threadFactory;
+		  return this;
+		}
 
 		public Configuration build() {
 			return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, notaryClass,
-					referenceFactory, executorService);
+					referenceFactory, executorService, threadFactory);
 		}
 
 		private static class SimpleConfiguration implements Configuration {
@@ -128,16 +140,19 @@ public interface Configuration {
 			private final Class<? extends Notary> notaryClass;
 			private final ReferenceFactory referenceFactory;
 			private final ExecutorService executorService;
+			private final ThreadFactory threadFactory;
 
 			public SimpleConfiguration(Router envelopeRouter, Opener envelopeOpener,
 					Inbox inbox, Class<? extends Notary> notaryClass,
-					ReferenceFactory referenceFactory, ExecutorService executorService) {
+					ReferenceFactory referenceFactory, ExecutorService executorService,
+					ThreadFactory threadFactory) {
 				this.envelopeRouter = envelopeRouter;
 				this.envelopeOpener = envelopeOpener;
 				this.inbox = inbox;
 				this.notaryClass = notaryClass;
 				this.referenceFactory = referenceFactory;
                 this.executorService = executorService;
+                this.threadFactory = threadFactory;
 			}
 
 			@Override
@@ -168,6 +183,11 @@ public interface Configuration {
 			@Override
 			public ExecutorService geExecutorService() {
 			  return executorService;
+			}
+			
+			@Override
+			public ThreadFactory geThreadFactory() {
+			  return threadFactory;
 			}
 
 		}

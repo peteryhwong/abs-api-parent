@@ -117,17 +117,13 @@ public interface Actor extends Reference, Comparable<Reference> {
      *         fail the message result. The user of the future
      *         value may inspect into causes of the exception to
      *         identify the reasons.
-     * @throws RuntimeException if the response {@link Future}
+     * @throws Exception if the response {@link Future}
      *         fails. In this case, the cause is wrapped inside
      *         the thrown exception.
      */
-    default <V> V ask(Object to, Object message) {
-      try {
-        final Future<V> response = send(to, message);
-        return response.get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+    default <V> V ask(Object to, Object message) throws Exception {
+      final Future<V> response = send(to, message);
+      return response.get();
     }
 
     /**
