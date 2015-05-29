@@ -19,7 +19,10 @@ public final class ContextThread extends Thread {
     final Set<Thread> threads = Thread.getAllStackTraces().keySet();
     for (final Thread t : threads) {
       try {
-        t.interrupt();
+        if (t instanceof ContextThread) {
+          // Interrupt only the threads only by the context
+          t.interrupt();
+        }
       } catch (Throwable x) {
         // Ignore
       }
