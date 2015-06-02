@@ -1,7 +1,5 @@
 package abs.api;
 
-import java.util.concurrent.ForkJoinPool;
-
 /**
  * A system context is an entry-point to an actor context. The default
  * constructor creates a context with default configuration.
@@ -11,6 +9,8 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class SystemContext implements Context, Contextual {
 
+    private static final ThreadInterruptWatchdog THREAD_INTERRUPT_WATCHDOG 
+        = new ThreadInterruptWatchdog(ContextThread::shutdown);
 	private static final Object MUTEX = new Object();
 	private static Context context;
 
@@ -18,16 +18,13 @@ public class SystemContext implements Context, Contextual {
 		return context;
 	}
 	
+	public static void interrupt() {
+	  THREAD_INTERRUPT_WATCHDOG.interrupt();
+	}
+	
 	static {
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        if (context() != null) {
-          try {
-            context().stop();
-            ForkJoinPool.commonPool().shutdown();
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        }
+        THREAD_INTERRUPT_WATCHDOG.interrupt();
       } , "context-shutdown"));
 	}
 
@@ -78,7 +75,7 @@ public class SystemContext implements Context, Contextual {
 	/** {@inheritDoc} */
 	@Override
 	public void stop() throws Exception {
-		context.stop();
+		THREAD_INTERRUPT_WATCHDOG.interrupt();
 	}
 
 	@Override

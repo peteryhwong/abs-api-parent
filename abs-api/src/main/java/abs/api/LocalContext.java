@@ -1,6 +1,7 @@
 package abs.api;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 
@@ -171,7 +172,19 @@ public class LocalContext implements Context {
 	@Override
 	public void stop() throws Exception {
 		try {
-			executor.shutdownNow();
+			List<Runnable> tasks = executor.shutdownNow();
+			for (Runnable task : tasks) {
+              if (task instanceof CompletableRunnableEnvelope) {
+                CompletableRunnableEnvelope e = (CompletableRunnableEnvelope) task;
+                Fut f = e.envelope().response();
+                f.cancel(true);
+              }
+              if (task instanceof CompletableCallableEnvelope) {
+                CompletableCallableEnvelope e = (CompletableCallableEnvelope) task;
+                Fut f = e.envelope().response();
+                f.cancel(true);
+              }
+			}
 			ContextThread.shutdown();
 		} catch (Exception e) {
 		}

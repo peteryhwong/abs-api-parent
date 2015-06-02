@@ -31,5 +31,12 @@ class CompletableRunnableEnvelope implements Runnable {
       response.completeExceptionally(e);
     }
   }
+  
+  /**
+   * @return the envelope of the task
+   */
+  protected final Envelope envelope() {
+    return envelope;
+  }
 
 }
