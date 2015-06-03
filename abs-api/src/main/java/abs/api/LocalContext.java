@@ -104,7 +104,7 @@ public class LocalContext implements Context {
 				break;
 			}
 			if (this.inbox == null) {
-				this.inbox = new DispatchInbox(executor);
+				this.inbox = new ThreadInbox(executor);
 			}
 		}
 		this.inbox.bind(this);
