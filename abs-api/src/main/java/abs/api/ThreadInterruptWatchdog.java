@@ -45,7 +45,6 @@ public class ThreadInterruptWatchdog extends Thread {
   }
 
   protected void executeInteruptCallback() {
-    System.err.println("INTERRUPT!!!");
     this.interruptCallback.run();
   }
 

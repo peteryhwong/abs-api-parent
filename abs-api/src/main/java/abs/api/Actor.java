@@ -52,6 +52,11 @@ public interface Actor extends Reference, Comparable<Reference> {
 		public URI name() {
 			return name;
 		}
+		
+		@Override
+		public String simpleName() {
+		  return "NOBODY";
+		}
 
 		@Override
 		public boolean equals(Object obj) {
@@ -84,6 +89,17 @@ public interface Actor extends Reference, Comparable<Reference> {
 	@Override
 	default URI name() {
 		return NOBODY.name();
+	}
+
+    /**
+     * A default implementation of {@link Reference#simpleName()}
+     * that uses {@link #NOBODY}.
+     * 
+     * @return the simple name of this actor
+     */
+	@Override
+	default String simpleName() {
+	  return NOBODY.simpleName();
 	}
 
 	/**

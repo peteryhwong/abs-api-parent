@@ -78,9 +78,11 @@ public interface MethodReference extends Reference {
 		private final URI name;
 		private final Reference owner;
 		private final Object[] args;
+		private final String simpleName;
 
 		public SimpleMethodReference(String name, Reference owner, Object... args) {
-			this.name = URI.create(name);
+			this.simpleName = name;
+            this.name = URI.create(name);
 			this.owner = owner;
 			this.args = args;
 		}
@@ -88,6 +90,11 @@ public interface MethodReference extends Reference {
 		@Override
 		public URI name() {
 			return name;
+		}
+		
+		@Override
+		public String simpleName() {
+		  return simpleName;
 		}
 
 		@Override

@@ -23,6 +23,13 @@ public interface Reference extends Serializable, Comparable<Reference> {
 	 * @return the name of this reference
 	 */
 	URI name();
+	
+	/**
+	 * The name of this reference without {@link Actor#NS}.
+	 * 
+	 * @return the simple of this reference
+	 */
+	String simpleName();
 
 	/**
 	 * Compares this reference to another reference using
@@ -76,11 +83,18 @@ public interface Reference extends Serializable, Comparable<Reference> {
 
 			private static final long serialVersionUID = 1L;
 
-			private final URI uri = URI.create(name);
+            private final URI uri = URI.create(name);
+            private final String simpleName =
+                toString().startsWith(Actor.NS) ? toString().substring(Actor.NS.length()) : toString();
 
 			@Override
 			public URI name() {
 				return uri;
+			}
+			
+			@Override
+			public String simpleName() {
+			  return simpleName;
 			}
 
 			@Override

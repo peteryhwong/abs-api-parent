@@ -50,6 +50,11 @@ interface ContextActor extends Actor, Contextual {
 		public final URI name() {
 			return name.name();
 		}
+		
+		@Override
+		public String simpleName() {
+		  return name.simpleName();
+		}
 
 		@Override
 		public Context context() {

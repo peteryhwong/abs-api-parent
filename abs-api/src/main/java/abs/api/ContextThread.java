@@ -1,7 +1,10 @@
 package abs.api;
 
 import java.util.Set;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicLong;
+
+import abs.api.LoggingRouter.LoggingThread;
 
 /**
  * A specialized {@link Thread} for {@link Context} that
@@ -19,7 +22,8 @@ public final class ContextThread extends Thread {
     final Set<Thread> threads = Thread.getAllStackTraces().keySet();
     for (final Thread t : threads) {
       try {
-        if (t instanceof ContextThread) {
+        if (t instanceof ContextThread || t instanceof LoggingThread
+            || t instanceof ThreadInterruptWatchdog || t instanceof ForkJoinWorkerThread) {
           // Interrupt only the threads only by the context
           t.interrupt();
         }

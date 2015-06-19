@@ -65,19 +65,23 @@ public class LocalContext implements Context {
 	public void initialize() throws Exception {
 		this.executor = configuration.geExecutorService();
 
+		Router messageRouter = null;
 		if (configuration.getRouter() != null) {
-			this.router = configuration.getRouter();
+			messageRouter = configuration.getRouter();
 		} else {
 			ServiceLoader<Router> routerLoader = ServiceLoader.load(Router.class);
 			for (Iterator<Router> it = routerLoader.iterator(); it.hasNext();) {
 				Router router = it.next();
-				this.router = router;
+				messageRouter = router;
 				break;
 			}
 			if (this.router == null) {
-				this.router = new LocalRouter(this);
+				messageRouter = new LocalRouter(this);
 			}
 		}
+        LoggingRouter loggingRouter =
+            new LoggingRouter(this.configuration.isLoggingEnabled(), this.configuration.getLogPath());
+		this.router = new RouterCollection(messageRouter, loggingRouter);
 		this.router.bind(this);
 
 		if (configuration.getOpener() != null) {
