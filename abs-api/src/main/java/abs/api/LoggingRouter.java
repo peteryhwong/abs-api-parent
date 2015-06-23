@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class LoggingRouter implements Router {
       this.from = from;
       this.to = to;
       this.message = message;
-      this.toString = String.join(",", time.toString(), this.from, this.to, this.message);
+      this.toString = String.join(";", time.toString(), this.from, this.to, this.message);
     }
 
     @Override
@@ -197,11 +198,22 @@ public class LoggingRouter implements Router {
   @Override
   public void bind(Context context) {}
 
+  /**
+   * Create a simple representation of object
+   * filtering unknown class information.
+   */
   protected String toString(Object o) {
     if (o == null) {
       return "null";
     }
-    return o.getClass().getSimpleName() + "@" + Integer.toHexString(o.hashCode());
+    final String hashCode = "@" + Integer.toHexString(o.hashCode());
+    if (o.toString().contains("Lambda")) {
+      return "Msg" + hashCode;
+    }
+    if (o instanceof Runnable || o instanceof Callable) {
+      return o.getClass().getSimpleName() + hashCode;
+    }
+    return "Msg" + hashCode;
   }
 
 }
