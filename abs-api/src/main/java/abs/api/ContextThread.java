@@ -1,9 +1,12 @@
 package abs.api;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicLong;
 
+import abs.api.ContextInbox.InboxSweeperThread;
 import abs.api.LoggingRouter.LoggingThread;
 
 /**
@@ -14,6 +17,10 @@ import abs.api.LoggingRouter.LoggingThread;
  */
 public final class ContextThread extends Thread {
 
+  private static final Set<Class<? extends Thread>> INTERRUPTIBLE_THREADS =
+      new HashSet<>(Arrays.asList(ContextThread.class, LoggingThread.class,
+          InboxSweeperThread.class, ThreadInterruptWatchdog.class, ForkJoinWorkerThread.class));
+
   /**
    * Tries to {@link #interrupt()} all the live threads in the
    * runtime.
@@ -22,8 +29,7 @@ public final class ContextThread extends Thread {
     final Set<Thread> threads = Thread.getAllStackTraces().keySet();
     for (final Thread t : threads) {
       try {
-        if (t instanceof ContextThread || t instanceof LoggingThread
-            || t instanceof ThreadInterruptWatchdog || t instanceof ForkJoinWorkerThread) {
+        if (INTERRUPTIBLE_THREADS.contains(t.getClass())) {
           // Interrupt only the threads only by the context
           t.interrupt();
         }

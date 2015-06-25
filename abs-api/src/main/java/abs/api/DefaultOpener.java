@@ -94,19 +94,19 @@ public class DefaultOpener implements Opener {
 	 *            a {@link java.lang.Object} object.
 	 * @return a {@link java.lang.Runnable} object.
 	 */
-	protected Runnable createEnvelopeTask(final Envelope envelope, final Object target) {
-		final Object msg = envelope.message();
-		if (target instanceof Behavior) {
-			return fromActorEnvelope(envelope, (Behavior) target);
-		} else if (msg instanceof MethodReference) {
-			return fromMethodReferenceEnvelope(envelope, target);
-		} else if (msg instanceof Runnable) {
-			return fromRunnableEnvelope(envelope);
-		} else if (msg instanceof Callable) {
-			return fromCallableEnvelope(envelope);
-		}
-		return null;
-	}
+    protected Runnable createEnvelopeTask(final Envelope envelope, final Object target) {
+      final Object msg = envelope.message();
+      if (msg instanceof Runnable) {
+        return createEnvelopeRunner(envelope);
+      } else if (msg instanceof Callable) {
+        return createEnvelopeRunner(envelope);
+      } else if (target instanceof Behavior) {
+        return fromActorEnvelope(envelope, (Behavior) target);
+      } else if (msg instanceof MethodReference) {
+        return fromMethodReferenceEnvelope(envelope, target);
+      }
+      return null;
+    }
 
 	/**
 	 * <p>
@@ -117,21 +117,8 @@ public class DefaultOpener implements Opener {
 	 *            a {@link abs.api.Envelope} object.
 	 * @return a {@link java.lang.Runnable} object.
 	 */
-	protected Runnable fromCallableEnvelope(final Envelope envelope) {
-	  return new CompletableCallableEnvelope(envelope);
-	}
-
-	/**
-	 * <p>
-	 * fromRunnableEnvelope.
-	 * </p>
-	 *
-	 * @param envelope
-	 *            a {@link abs.api.Envelope} object.
-	 * @return a {@link java.lang.Runnable} object.
-	 */
-	protected Runnable fromRunnableEnvelope(final Envelope envelope) {
-	  return new CompletableRunnableEnvelope(envelope);
+	protected Runnable createEnvelopeRunner(final Envelope envelope) {
+	  return new EnveloperRunner(envelope);
 	}
 
 	/**

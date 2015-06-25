@@ -108,7 +108,7 @@ public class LocalContext implements Context {
 				break;
 			}
 			if (this.inbox == null) {
-				this.inbox = new ThreadInbox(executor);
+				this.inbox = new ContextInbox(executor);
 			}
 		}
 		this.inbox.bind(this);
@@ -178,19 +178,15 @@ public class LocalContext implements Context {
 		try {
 			List<Runnable> tasks = executor.shutdownNow();
 			for (Runnable task : tasks) {
-              if (task instanceof CompletableRunnableEnvelope) {
-                CompletableRunnableEnvelope e = (CompletableRunnableEnvelope) task;
-                Fut f = e.envelope().response();
-                f.cancel(true);
-              }
-              if (task instanceof CompletableCallableEnvelope) {
-                CompletableCallableEnvelope e = (CompletableCallableEnvelope) task;
-                Fut f = e.envelope().response();
+              if (task instanceof EnveloperRunner) {
+                EnveloperRunner er = (EnveloperRunner) task;
+                Fut f = er.envelope().response();
                 f.cancel(true);
               }
 			}
 			ContextThread.shutdown();
 		} catch (Exception e) {
+		  // Ignore
 		}
 	}
 
