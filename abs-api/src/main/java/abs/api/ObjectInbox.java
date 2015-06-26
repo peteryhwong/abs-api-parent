@@ -28,11 +28,12 @@ import java.util.function.Supplier;
  * @see ContextInbox
  */
 class ObjectInbox extends AbstractInbox
-    implements Opener, Runnable, Supplier<Envelope>, Consumer<Envelope> {
+    implements Opener, Runnable, Supplier<Envelope>, EnvelopeListener {
 
   private final Object receiver;
   private final ExecutorService executor;
   private final BlockingQueue<Envelope> unprocessed = new LinkedBlockingQueue<>();
+  private final BlockingQueue<Envelope> awaiting = new LinkedBlockingQueue<>();
   private final AtomicReference<Envelope> processing = new AtomicReference<>(null);
 
   /**
@@ -69,7 +70,7 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public Envelope get() {
-    if (processing.get() != null) {
+    if (isBusy()) {
       return null;
     }
     final Envelope envelope = unprocessed.peek();
@@ -83,13 +84,62 @@ class ObjectInbox extends AbstractInbox
   }
 
   @Override
-  public void accept(Envelope envelope) {
-    unprocessed.remove(envelope);
-    processing.getAndSet(null);
+  public void onOpen(Envelope envelope, Context context) {
+    if (envelope instanceof AwaitEnvelope) {
+      notifyStartAwait(envelope, context);
+    }
+  }
+
+  @Override
+  public void onComplete(Envelope envelope, Context context) {
+    this.unprocessed.remove(envelope);
+    this.processing.getAndSet(null);
+    if (envelope instanceof AwaitEnvelope) {
+      notifyEndAwait(envelope, context);
+    }
+  }
+
+  protected void onAwaitStart(Envelope envelope, Context context) {
+    assert processing.get() == envelope : "Wrong current envelope: " + envelope;
+    this.awaiting.offer(envelope);
+    this.processing.getAndSet(null);
+  }
+
+  protected void onAwaitEnd(Envelope envelope, Context context) {
+    this.awaiting.remove(envelope);
+  }
+
+  protected boolean isBusy() {
+    return processing.get() != null;
   }
 
   protected EnveloperRunner createEnvelopeRunner(Envelope envelope) {
-    return new EnveloperRunner(envelope, this::accept);
+    return new EnveloperRunner(envelope, context, this);
+  }
+
+  protected void notifyStartAwait(Envelope envelope, Context context) {
+    // The sender (from) is going to await on this envelope.
+    // This means that the sender's ObjectInbox should be
+    // notified such that the sender would be able to execute
+    // other messages while awaiting for this envelope.
+    ObjectInbox senderObjectInbox = senderInbox(envelope, context);
+    senderObjectInbox.onAwaitStart(envelope, context);
+  }
+
+  protected void notifyEndAwait(Envelope envelope, Context context) {
+    // When the envelope is processed (success or failure), the
+    // sender of the envelope should be notified again in order
+    // to unblock the processing of the next messages for
+    // sender.
+    ObjectInbox senderObjectInbox = senderInbox(envelope, context);
+    senderObjectInbox.onAwaitEnd(envelope, context);
+  }
+
+  private ObjectInbox senderInbox(Envelope envelope, Context context) {
+    ContextInbox inbox = (ContextInbox) context.inbox(envelope.from());
+    Object sender = context.object(envelope.from());
+    ObjectInbox senderObjectInbox = inbox.inbox(sender);
+    return senderObjectInbox;
   }
 
 }

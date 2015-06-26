@@ -11,8 +11,9 @@ import java.util.function.Consumer;
  */
 class EnveloperRunner implements Runnable {
 
-  protected final Envelope envelope;
-  private final Consumer<Envelope> completionConsumer;
+  private final Envelope envelope;
+  private final Context context;
+  private final EnvelopeListener envelopeListener;
 
   /**
    * Ctor
@@ -21,20 +22,21 @@ class EnveloperRunner implements Runnable {
    * @param envelope the {@link Envelope}
    */
   public EnveloperRunner(Envelope envelope) {
-    this(envelope, null);
+    this(envelope, null, null);
   }
 
   /**
    * Ctor
    * 
    * @param envelope the {@link Envelope}
-   * @param completionConsumer the {@link Consumer} to apply
-   *        when the {@link Envelope} processing is complete
-   *        with <i>success</i> (i.e. no exception)
+   * @param context the current {@link Context}
+   * @param envelopeListener an {@link EnvelopeListener} to be
+   *        notified of different stages of running an envelope.
    */
-  public EnveloperRunner(Envelope envelope, Consumer<Envelope> completionConsumer) {
+  public EnveloperRunner(Envelope envelope, Context context, EnvelopeListener envelopeListener) {
     this.envelope = envelope;
-    this.completionConsumer = completionConsumer;
+    this.context = context;
+    this.envelopeListener = envelopeListener;
   }
 
   @Override
@@ -65,27 +67,37 @@ class EnveloperRunner implements Runnable {
 
   private void executeCallableMessage(final Object msg, final Fut response) {
     try {
+      onOpen();
       Object result = ((Callable<?>) msg).call();
       response.complete(result);
-      onComplete();
     } catch (Throwable e) {
       response.completeExceptionally(e);
+    } finally {
+      onComplete();
     }
   }
 
   private void executeRunnableEnvelope(final Object msg, final Fut response) {
     try {
+      onOpen();
       ((Runnable) msg).run();
       response.complete(null);
-      onComplete();
     } catch (Throwable e) {
       response.completeExceptionally(e);
+    } finally {
+      onComplete();
     }
   }
 
   private void onComplete() {
-    if (completionConsumer != null) {
-      completionConsumer.accept(envelope);
+    if (envelopeListener != null) {
+      envelopeListener.onOpen(envelope, context);
+    }
+  }
+
+  private void onOpen() {
+    if (envelopeListener != null) {
+      envelopeListener.onOpen(envelope, context);
     }
   }
 
