@@ -22,8 +22,9 @@ public class ContextTest {
 	}
 
 	@Test
-	public void tesetSendMessageOutsideActor() throws Exception {
-		LocalContext context = new LocalContext();
+	public void testSendMessageOutsideActor() throws Exception {
+	    Configuration config = Configuration.newConfiguration().withInbox(new AsyncInbox()).build();
+		LocalContext context = new LocalContext(config);
 		final MyActor actor = new MyActor();
 		context.newActor("myActor", actor);
 		Callable<Double> message = () -> actor.doIt(10);

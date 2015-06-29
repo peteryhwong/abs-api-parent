@@ -95,7 +95,7 @@ public interface Configuration {
 
     private Router envelopeRouter = null;
     private Opener envelopeOpener = null;
-    private Inbox inbox = new AsyncInbox();
+    private Inbox inbox = null;
     private Class<? extends Notary> notaryClass = LocalNotary.class;
     private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
     private ThreadFactory threadFactory = r -> new ContextThread(r);

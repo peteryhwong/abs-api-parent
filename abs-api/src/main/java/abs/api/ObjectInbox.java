@@ -57,6 +57,7 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public <V> Future<V> open(Envelope envelope, Object target) {
+    super.onOpen(envelope, this, target);
     executor.submit(createEnvelopeRunner(envelope));
     return envelope.response();
   }
@@ -100,7 +101,6 @@ class ObjectInbox extends AbstractInbox
   }
 
   protected void onAwaitStart(Envelope envelope, Context context) {
-    assert processing.get() == envelope : "Wrong current envelope: " + envelope;
     this.awaiting.offer(envelope);
     this.processing.getAndSet(null);
   }
@@ -111,6 +111,14 @@ class ObjectInbox extends AbstractInbox
 
   protected boolean isBusy() {
     return processing.get() != null;
+  }
+
+  protected boolean isAwaiting() {
+    return !awaiting.isEmpty();
+  }
+
+  protected Envelope lastAwaitingEnvelope() {
+    return this.awaiting.peek();
   }
 
   protected EnveloperRunner createEnvelopeRunner(Envelope envelope) {
@@ -135,7 +143,7 @@ class ObjectInbox extends AbstractInbox
     senderObjectInbox.onAwaitEnd(envelope, context);
   }
 
-  private ObjectInbox senderInbox(Envelope envelope, Context context) {
+  protected ObjectInbox senderInbox(Envelope envelope, Context context) {
     ContextInbox inbox = (ContextInbox) context.inbox(envelope.from());
     Object sender = context.object(envelope.from());
     ObjectInbox senderObjectInbox = inbox.inbox(sender);
