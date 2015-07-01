@@ -32,11 +32,11 @@ public class SimpleEnvelope implements Envelope {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.message = message;
-		this.future = new Fut();
+		this.future = createResponse();
 		this.sequence = SEQUENCER.get();
 	}
 
-	/** {@inheritDoc} */
+  /** {@inheritDoc} */
 	@Override
 	public Reference from() {
 		return sender;
@@ -78,4 +78,7 @@ public class SimpleEnvelope implements Envelope {
 		return sb.append(")").toString();
 	}
 
+    protected Fut createResponse() {
+      return new Fut();
+    }
 }

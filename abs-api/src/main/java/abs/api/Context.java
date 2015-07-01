@@ -139,4 +139,26 @@ public interface Context extends Lifecycle, Executor {
 		return Actor.NOBODY.send(to, message);
 	}
 
+    /**
+     * Sends a message to a reference with an additional property
+     * that the sender of the message awaits on the response. The
+     * usage of this method when necessary ensures that, for an
+     * object, the object might be awaiting on an arbitrary number
+     * of envelopes. However, it is ensure that only one message
+     * at a time is processed inside the receiver object.
+     * 
+     * @see Actor#await(Object, Object)
+     * 
+     * @param <V> the type of the future value of the response of
+     *        the message
+     * @param to the receiver of the message
+     * @param message the message itself
+     * @return the future value to capture the result of the
+     *         message
+     */
+    default <V> Future<V> await(Object to, Object message) {
+      return Actor.NOBODY.await(to, message);
+    }
+    
+
 }

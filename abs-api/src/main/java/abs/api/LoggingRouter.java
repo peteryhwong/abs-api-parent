@@ -144,6 +144,7 @@ public class LoggingRouter implements Router {
   }
 
   private final BlockingQueue<LoggingEvent> events = new LinkedBlockingQueue<>();
+  private final boolean enabled;
 
   /**
    * Ctor.
@@ -171,6 +172,7 @@ public class LoggingRouter implements Router {
    * @param logFilePath the full path to the log file
    */
   public LoggingRouter(final boolean enabled, String logFilePath) {
+    this.enabled = enabled;
     if (!enabled) {
       return;
     }
@@ -184,12 +186,15 @@ public class LoggingRouter implements Router {
 
   @Override
   public void route(Envelope envelope) {
+    if (!this.enabled) {
+      return;
+    }
     LoggingEvent event = create(envelope);
     events.offer(event);
   }
 
   private LoggingEvent create(Envelope e) {
-    String from = e.from().simpleName();
+    String from = e.from() == null ? "NOBODY" : e.from().simpleName();
     String to = e.to().simpleName();
     String message = toString(e.message());
     return new LoggingEvent(from, to, message);

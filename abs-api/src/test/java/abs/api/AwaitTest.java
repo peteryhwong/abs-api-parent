@@ -132,4 +132,22 @@ public class AwaitTest {
     assertThat(oi2.lastAwaitingEnvelope()).isNull();
   }
 
+  @Test
+  public void awaitEnsuresEnvelopeProcessedOnFutureAccess() throws Exception {
+    ExecutorService executor = Executors.newCachedThreadPool();
+    Configuration configuration =
+        Configuration.newConfiguration().withExecutorService(executor).build();
+    Context context = new LocalContext(configuration);
+
+    Network o1 = new Network();
+    Actor o1a = context.newActor("n1", o1);
+
+    Callable<Long> message = () -> o1.newToken();
+    Future<Long> f = context.await(o1a, message);
+    assertThat(f.isDone()).isTrue();
+    Long l = f.get();
+    assertThat(l).isNotNull();
+    assertThat(l).isEqualTo(o1.token.longValue());
+  }
+
 }

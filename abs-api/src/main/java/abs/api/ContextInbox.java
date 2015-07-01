@@ -68,6 +68,7 @@ class ContextInbox extends AbstractInbox {
   public ContextInbox(ExecutorService executor) {
     this.executor = executor;
     inboxes.putIfAbsent(NULL_RECEIVER, new ObjectInbox(NULL_RECEIVER, executor));
+    new InboxSweeperThread(this.inboxes.values()).start();
   }
 
   protected void execute(Collection<ObjectInbox> inboxes, final boolean parallel) {
@@ -92,7 +93,9 @@ class ContextInbox extends AbstractInbox {
       return inboxes.get(receiver);
     }
     inboxes.putIfAbsent(receiver, new ObjectInbox(receiver, executor));
-    return inboxes.get(receiver);
+    final ObjectInbox oi = inboxes.get(receiver);
+    oi.bind(context);
+    return oi;
   }
 
 }

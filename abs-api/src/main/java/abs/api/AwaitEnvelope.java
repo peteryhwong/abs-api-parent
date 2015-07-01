@@ -20,5 +20,10 @@ class AwaitEnvelope extends SimpleEnvelope {
   public AwaitEnvelope(Reference sender, Reference receiver, Object message) {
     super(sender, receiver, message);
   }
+  
+  @Override
+  protected Fut createResponse() {
+    return new Fut(true);
+  }
 
 }

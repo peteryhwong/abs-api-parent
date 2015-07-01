@@ -145,7 +145,8 @@ class ObjectInbox extends AbstractInbox
 
   protected ObjectInbox senderInbox(Envelope envelope, Context context) {
     ContextInbox inbox = (ContextInbox) context.inbox(envelope.from());
-    Object sender = context.object(envelope.from());
+    // sender can be null (NOBODY)
+    Object sender = envelope.from() == null ? null : context.object(envelope.from());
     ObjectInbox senderObjectInbox = inbox.inbox(sender);
     return senderObjectInbox;
   }
