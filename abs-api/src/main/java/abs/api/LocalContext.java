@@ -3,6 +3,7 @@ package abs.api;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import javax.annotation.PostConstruct;
@@ -169,7 +170,11 @@ public class LocalContext implements Context {
 	/** {@inheritDoc} */
 	@Override
 	public void execute(Runnable command) {
-	  executor.execute(command);
+      try {
+        executor.submit(command).get();
+      } catch (InterruptedException | ExecutionException e) {
+        // XXX
+      }
 	}
 
 	/** {@inheritDoc} */

@@ -91,7 +91,7 @@ class EnveloperRunner implements Runnable {
 
   private void onComplete() {
     if (envelopeListener != null) {
-      envelopeListener.onOpen(envelope, context);
+      envelopeListener.onComplete(envelope, context);
     }
   }
 

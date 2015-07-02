@@ -2,6 +2,8 @@ package abs.api;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,14 +42,15 @@ public class AwaitTest {
       this.network = network;
     }
 
-    public void transmit() {
+    public Long transmit() {
       Callable<Long> message = () -> network.newToken();
       Future<Long> future = await(network, message);
       try {
         Long token = future.get();
-        System.out.println("Token = " + token);
+        return token;
       } catch (InterruptedException | ExecutionException e) {
         e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
 
@@ -66,14 +69,16 @@ public class AwaitTest {
       this.network = network;
     }
 
-    public void relay() {
+    public Long relay() {
       Packet packet = new Packet(network);
-      Runnable message = () -> packet.transmit();
-      Future<Void> done = await(packet, message);
+      Callable<Long> message = () -> packet.transmit();
+      Future<Long> done = await(packet, message);
       try {
-        done.get();
+        Long token = done.get();
+        return token;
       } catch (InterruptedException | ExecutionException e) {
         e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
 
@@ -148,6 +153,65 @@ public class AwaitTest {
     Long l = f.get();
     assertThat(l).isNotNull();
     assertThat(l).isEqualTo(o1.token.longValue());
+  }
+
+  @Test
+  public void relaySinglePacket() throws Exception {
+    ExecutorService executor = Executors.newCachedThreadPool();
+    Configuration configuration =
+        Configuration.newConfiguration().withExecutorService(executor).build();
+    Context context = new LocalContext(configuration);
+
+    Network o1 = new Network();
+    Actor o1a = context.newActor("n1", o1);
+
+    Gateway o2 = new Gateway(o1);
+    Actor o2a = context.newActor("g1", o2);
+
+    Callable<Long> message = () -> o2.relay();
+    Future<Long> f = context.await(o2a, message);
+    assertThat(f).isNotNull();
+    assertThat(f.isDone()).isTrue();
+    assertThat(f.get()).isEqualTo(o1.token.longValue());
+  }
+
+  @Test
+  public void relayPacketSequence() throws Exception {
+    ExecutorService executor = Executors.newCachedThreadPool();
+    Configuration configuration =
+        Configuration.newConfiguration().withExecutorService(executor).build();
+    Context context = new LocalContext(configuration);
+
+    Network o1 = new Network();
+    Actor o1a = context.newActor("n1", o1);
+
+    Gateway o2 = new Gateway(o1);
+    Actor o2a = context.newActor("g1", o2);
+
+    final int size = 300;
+    List<Future<Long>> futures = new ArrayList<>();
+    for (int i = 0; i < size; ++i) {
+      Callable<Long> msg = () -> o2.relay();
+      Future<Long> f = context.await(o2a, msg);
+      futures.add(f);
+    }
+    assertThat(futures).isNotNull();
+    assertThat(futures).isNotEmpty();
+    assertThat(futures).hasSize(size);
+
+    List<Long> results = new ArrayList<>();
+    for (Future<Long> f : futures) {
+      try {
+        results.add(f.get());
+      } catch (Exception e) {
+        results.add(-1L);
+      }
+    };
+    assertThat(results).isNotNull();
+    assertThat(results).isNotEmpty();
+    assertThat(results).containsNoDuplicates();
+    assertThat(results).isStrictlyOrdered();
+    assertThat(results.get(size - 1)).isEqualTo(o1.token.get());
   }
 
 }
