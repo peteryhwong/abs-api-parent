@@ -282,7 +282,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 	 * @return the reference of the object or {@code null}
 	 */
 	default Reference reference(Object object) {
-		return object instanceof Reference? (Reference) object : context().reference(object);
+		return context().reference(object);
 	}
 
 	/**

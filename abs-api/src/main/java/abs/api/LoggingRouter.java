@@ -42,23 +42,28 @@ public class LoggingRouter implements Router {
   /**
    * The full path to the logging file for jabs
    */
-  public static final String JABS_LOGGING_PATH = "jabs.logging.path";
+  public static final String JABS_LOGGING_PATH = "jabs.log.path";
   static final String DEFAULT_LOG_PATH =
-      System.getProperty("java.io.tmpdir") + "/jabs-logging-" + System.currentTimeMillis() + ".log";
+      System.getProperty("java.io.tmpdir") + "/jabs-log-" + System.currentTimeMillis() + ".log";
+
+  /**
+   * When the system started.
+   */
+  static final Instant TIME_ORIGIN = Instant.now();
 
   static final class LoggingEvent {
-    private final Instant time;
+    private final long time;
     private final String from;
     private final String to;
     private final String message;
     private final String toString;
 
     LoggingEvent(String from, String to, String message) {
-      this.time = Instant.now();
+      this.time = Duration.between(TIME_ORIGIN, Instant.now()).toMillis();
       this.from = from;
       this.to = to;
       this.message = message;
-      this.toString = String.join(";", time.toString(), this.from, this.to, this.message);
+      this.toString = String.join(";", Long.toString(time), this.from, this.to, this.message);
     }
 
     @Override
@@ -204,8 +209,8 @@ public class LoggingRouter implements Router {
   public void bind(Context context) {}
 
   /**
-   * Create a simple representation of object
-   * filtering unknown class information.
+   * Create a simple representation of object filtering unknown
+   * class information.
    */
   protected String toString(Object o) {
     if (o == null) {
