@@ -127,7 +127,7 @@ public interface Context extends Lifecycle, Executor {
 	 * @see Actor#send(Object, Object)
 	 * 
 	 * @param to
-	 *            the recipient actor reference
+	 *            the recipient actor object
 	 * @param message
 	 *            the message
 	 * @param <V>
@@ -135,7 +135,7 @@ public interface Context extends Lifecycle, Executor {
 	 *            message
 	 * @return the result of the message as a future
 	 */
-	default <V> Future<V> send(Reference to, Object message) {
+	default <V> Future<V> send(Object to, Object message) {
 		return Actor.NOBODY.send(to, message);
 	}
 

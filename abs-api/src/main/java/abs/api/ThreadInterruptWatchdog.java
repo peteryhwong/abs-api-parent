@@ -8,7 +8,7 @@ package abs.api;
  * 
  * @author Behrooz Nobakht
  */
-public class ThreadInterruptWatchdog extends Thread {
+public final class ThreadInterruptWatchdog extends Thread {
 
   private final Runnable interruptCallback;
 
@@ -34,7 +34,7 @@ public class ThreadInterruptWatchdog extends Thread {
         return;
       } else {
         try {
-          sleep(50);
+          sleep(32);
         } catch (InterruptedException e) {
           executeInteruptCallback();
           yield();

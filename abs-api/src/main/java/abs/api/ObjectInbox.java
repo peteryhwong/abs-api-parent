@@ -1,9 +1,15 @@
 package abs.api;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -30,11 +36,49 @@ import java.util.function.Supplier;
 class ObjectInbox extends AbstractInbox
     implements Opener, Runnable, Supplier<Envelope>, EnvelopeListener {
 
+  private static class ObjectInboxExecutor implements Runnable {
+
+    private static final Comparator<EnveloperRunner> CMP =
+        (er1, er2) -> Long.compare(er1.envelope().sequence(), er2.envelope().sequence());
+    private final BlockingQueue<EnveloperRunner> queue = new PriorityBlockingQueue<>(1024, CMP);
+    private final ExecutorService executor;
+
+    public ObjectInboxExecutor(ExecutorService executor) {
+      this.executor = executor;
+    }
+
+    protected void enqueue(EnveloperRunner er) {
+      queue.offer(er);
+      run();
+    }
+
+    @Override
+    public void run() {
+      while (!queue.isEmpty()) {
+        EnveloperRunner er = queue.poll();
+        if (er == null) {
+          continue;
+        }
+        execute(er);
+      }
+    }
+
+    protected void execute(EnveloperRunner er) {
+      try {
+        executor.submit(er).get();
+      } catch (InterruptedException | ExecutionException e) {
+        // Ignore
+      }
+    }
+
+  }
+
   private final Object receiver;
-  private final ExecutorService executor;
+  private final ObjectInboxExecutor executor;
   private final BlockingQueue<Envelope> unprocessed = new LinkedBlockingQueue<>();
   private final BlockingQueue<Envelope> awaiting = new LinkedBlockingQueue<>();
   private final AtomicReference<Envelope> processing = new AtomicReference<>(null);
+  private final AtomicBoolean sweeping = new AtomicBoolean(false);
 
   /**
    * Ctor
@@ -45,7 +89,7 @@ class ObjectInbox extends AbstractInbox
    */
   public ObjectInbox(Object receiver, ExecutorService executor) {
     this.receiver = receiver;
-    this.executor = executor;
+    this.executor = new ObjectInboxExecutor(executor);
   }
 
   @Override
@@ -58,15 +102,19 @@ class ObjectInbox extends AbstractInbox
   @Override
   public <V> Future<V> open(Envelope envelope, Object target) {
     super.onOpen(envelope, this, target);
-    executor.submit(createEnvelopeRunner(envelope));
+    executor.enqueue(createEnvelopeRunner(envelope));
     return envelope.response();
   }
 
   public void run() {
+    if (!sweeping.compareAndSet(false, true)) {
+      return;
+    }
     Envelope envelope = get();
     if (envelope != null) {
       open(envelope, receiver);
     }
+    sweeping.getAndSet(false);
   }
 
   @Override
@@ -74,7 +122,7 @@ class ObjectInbox extends AbstractInbox
     if (isBusy()) {
       return null;
     }
-    final Envelope envelope = unprocessed.peek();
+    final Envelope envelope = nextEnvelope(unprocessed);
     if (envelope == null) {
       return null;
     }
@@ -86,6 +134,7 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public void onOpen(Envelope envelope, Context context) {
+    this.unprocessed.remove(envelope);
     if (envelope instanceof AwaitEnvelope) {
       notifyStartAwait(envelope, context);
     }
@@ -93,7 +142,6 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public void onComplete(Envelope envelope, Context context) {
-    this.unprocessed.remove(envelope);
     this.processing.getAndSet(null);
     if (envelope instanceof AwaitEnvelope) {
       notifyEndAwait(envelope, context);
@@ -149,6 +197,15 @@ class ObjectInbox extends AbstractInbox
     Object sender = envelope.from() == null ? null : context.object(envelope.from());
     ObjectInbox senderObjectInbox = inbox.inbox(sender);
     return senderObjectInbox;
+  }
+
+  protected Envelope nextEnvelope(BlockingQueue<Envelope> q) {
+    if (q.isEmpty()) {
+      return null;
+    }
+    Envelope env =
+        Collections.min(new ArrayList<>(q), (e1, e2) -> Long.compare(e1.sequence(), e2.sequence()));
+    return env;
   }
 
 }

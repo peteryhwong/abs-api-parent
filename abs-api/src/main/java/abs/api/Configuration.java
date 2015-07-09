@@ -40,14 +40,6 @@ public interface Configuration {
   Inbox getInbox();
 
   /**
-   * Provides the type of notary of the context
-   *
-   * @return the {@link java.lang.Class} of the
-   *         {@link abs.api.Notary} of the context
-   */
-  Class<? extends Notary> getNotary();
-
-  /**
    * Provides the reference factory of the context.
    * 
    * @return the {@link ReferenceFactory} of the context
@@ -55,26 +47,44 @@ public interface Configuration {
   ReferenceFactory getReferenceFactory();
 
   /**
+   * The executor service.
+   * 
    * @return the {@link ExecutorService} of the context
    */
-  ExecutorService geExecutorService();
+  ExecutorService getExecutorService();
 
   /**
+   * The thread factory.
+   * 
    * @return the {@link ThreadFactory} of the context
    */
-  ThreadFactory geThreadFactory();
+  ThreadFactory getThreadFactory();
 
   /**
+   * Is logging enabled?
+   * 
    * @return if the logging of {@link Actor} messages is
    *         enabled.
    */
   boolean isLoggingEnabled();
 
   /**
+   * Get log path.
+   * 
+   * @see #isLoggingEnabled()
    * @return the full path of the log file for {@link Actor}
    *         messages.
    */
   String getLogPath();
+
+  /**
+   * Is remote messaging enabled?
+   * 
+   * @return <code>true</code> if building context for a remote
+   *         setup; otherwise <code>false</code> for a local
+   *         context.
+   */
+  boolean isRemoteMessagingEnabled();
 
   /**
    * Creates an instance of
@@ -93,15 +103,15 @@ public interface Configuration {
    */
   static class ConfigurationBuilder {
 
-    private Router envelopeRouter = null;
-    private Opener envelopeOpener = null;
-    private Inbox inbox = null;
-    private Class<? extends Notary> notaryClass = LocalNotary.class;
-    private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
     private ThreadFactory threadFactory = r -> new ContextThread(r);
     private ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
+    private Router envelopeRouter = new LocalRouter();
+    private Opener envelopeOpener = new DefaultOpener();
+    private Inbox inbox = new ContextInbox(executorService);
+    private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
     private boolean isLoggingEnabled = false;
     private String logPath = LoggingRouter.DEFAULT_LOG_PATH;
+    private boolean isRemoteEnabled = false;
 
     ConfigurationBuilder() {}
 
@@ -117,11 +127,6 @@ public interface Configuration {
 
     public ConfigurationBuilder withInbox(Inbox inbox) {
       this.inbox = inbox;
-      return this;
-    }
-
-    public ConfigurationBuilder withNotary(Class<? extends Notary> notary) {
-      this.notaryClass = notary;
       return this;
     }
 
@@ -151,83 +156,23 @@ public interface Configuration {
       return this;
     }
 
-    public Configuration build() {
-      return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, notaryClass,
-          referenceFactory, executorService, threadFactory, isLoggingEnabled, logPath);
+    public ConfigurationBuilder enableRemoteMessaging() {
+      this.isRemoteEnabled = true;
+      return this;
     }
 
-    private static class SimpleConfiguration implements Configuration {
+    public final Configuration build() {
+      return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, referenceFactory,
+          executorService, threadFactory, isLoggingEnabled, logPath, isRemoteEnabled);
+    }
 
-      private final Router envelopeRouter;
-      private final Opener envelopeOpener;
-      private final Inbox inbox;
-      private final Class<? extends Notary> notaryClass;
-      private final ReferenceFactory referenceFactory;
-      private final ExecutorService executorService;
-      private final ThreadFactory threadFactory;
-      private final boolean isLoggingEnabled;
-      private final String logPath;
-
-      public SimpleConfiguration(Router envelopeRouter, Opener envelopeOpener, Inbox inbox,
-          Class<? extends Notary> notaryClass, ReferenceFactory referenceFactory,
-          ExecutorService executorService, ThreadFactory threadFactory,
-          final boolean isLoggingEnabled, String logPath) {
-        this.envelopeRouter = envelopeRouter;
-        this.envelopeOpener = envelopeOpener;
-        this.inbox = inbox;
-        this.notaryClass = notaryClass;
-        this.referenceFactory = referenceFactory;
-        this.executorService = executorService;
-        this.threadFactory = threadFactory;
-        this.isLoggingEnabled = isLoggingEnabled;
-        this.logPath = logPath;
-      }
-
-      @Override
-      public Router getRouter() {
-        return this.envelopeRouter;
-      }
-
-      @Override
-      public Opener getOpener() {
-        return this.envelopeOpener;
-      }
-
-      @Override
-      public Inbox getInbox() {
-        return this.inbox;
-      }
-
-      @Override
-      public Class<? extends Notary> getNotary() {
-        return this.notaryClass;
-      }
-
-      @Override
-      public ReferenceFactory getReferenceFactory() {
-        return referenceFactory;
-      }
-
-      @Override
-      public ExecutorService geExecutorService() {
-        return executorService;
-      }
-
-      @Override
-      public ThreadFactory geThreadFactory() {
-        return threadFactory;
-      }
-
-      @Override
-      public boolean isLoggingEnabled() {
-        return isLoggingEnabled;
-      }
-
-      @Override
-      public String getLogPath() {
-        return logPath;
-      }
-
+    /**
+     * Build a {@link LocalContext}.
+     * 
+     * @return the {@link LocalContext} for this configuration
+     */
+    public Context buildContext() {
+      return new LocalContext(build());
     }
 
   }

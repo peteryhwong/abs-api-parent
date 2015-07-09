@@ -34,7 +34,8 @@ import java.util.concurrent.Future;
  */
 public interface Actor extends Reference, Comparable<Reference> {
 
-	/**
+
+  /**
 	 * The prefix for all actors created in a context.
 	 */
 	String NS = "abs://";
@@ -45,8 +46,9 @@ public interface Actor extends Reference, Comparable<Reference> {
 	 */
 	Actor NOBODY = new Actor() {
 		private static final long serialVersionUID = 6203481166223651274L;
+		private static final String NAME = "NOBODY";
 
-		private final URI name = URI.create(NS + "NOBODY");
+		private final URI name = URI.create(NS + NAME);
 
 		@Override
 		public URI name() {
@@ -55,7 +57,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 		
 		@Override
 		public String simpleName() {
-		  return "NOBODY";
+		  return NAME;
 		}
 
 		@Override
@@ -75,6 +77,20 @@ public interface Actor extends Reference, Comparable<Reference> {
 		@Override
 		public String toString() {
 			return name.toASCIIString();
+		}
+		
+		@Override
+		public Context context() {
+		  return SystemContext.context();
+		}
+		
+		@Override
+		public Reference self() {
+		  Reference ref = reference(this);
+		  if (ref == null) {
+		    context().newActor(NAME, this);
+		  }
+		  return reference(this);
 		}
 	};
 

@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +25,8 @@ public class AwaitTest {
     private final AtomicLong token = new AtomicLong(0);
 
     public Long newToken() {
-      return token.incrementAndGet();
+      Long t = token.incrementAndGet();
+      return t;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class AwaitTest {
 
     @Override
     public String simpleName() {
-      return "packet[" + Integer.toHexString(hashCode()) + "]";
+      return "Packet@" + Integer.toHexString(hashCode());
     }
   }
 
@@ -71,6 +73,7 @@ public class AwaitTest {
 
     public Long relay() {
       Packet packet = new Packet(network);
+      context().newActor(packet.simpleName(), packet);
       Callable<Long> message = () -> packet.transmit();
       Future<Long> done = await(packet, message);
       try {
@@ -145,10 +148,10 @@ public class AwaitTest {
     Context context = new LocalContext(configuration);
 
     Network o1 = new Network();
-    Actor o1a = context.newActor("n1", o1);
+    context.newActor("n1", o1);
 
     Callable<Long> message = () -> o1.newToken();
-    Future<Long> f = context.await(o1a, message);
+    Future<Long> f = context.await(o1, message);
     assertThat(f.isDone()).isTrue();
     Long l = f.get();
     assertThat(l).isNotNull();
@@ -163,13 +166,13 @@ public class AwaitTest {
     Context context = new LocalContext(configuration);
 
     Network o1 = new Network();
-    Actor o1a = context.newActor("n1", o1);
+    context.newActor("n1", o1);
 
     Gateway o2 = new Gateway(o1);
-    Actor o2a = context.newActor("g1", o2);
+    context.newActor("g1", o2);
 
     Callable<Long> message = () -> o2.relay();
-    Future<Long> f = context.await(o2a, message);
+    Future<Long> f = context.await(o2, message);
     assertThat(f).isNotNull();
     assertThat(f.isDone()).isTrue();
     assertThat(f.get()).isEqualTo(o1.token.longValue());
@@ -183,16 +186,16 @@ public class AwaitTest {
     Context context = new LocalContext(configuration);
 
     Network o1 = new Network();
-    Actor o1a = context.newActor("n1", o1);
+    context.newActor("n1", o1);
 
     Gateway o2 = new Gateway(o1);
-    Actor o2a = context.newActor("g1", o2);
+    context.newActor("g1", o2);
 
-    final int size = 300;
+    final int size = new Random(System.currentTimeMillis()).nextInt(1000);
     List<Future<Long>> futures = new ArrayList<>();
     for (int i = 0; i < size; ++i) {
       Callable<Long> msg = () -> o2.relay();
-      Future<Long> f = context.await(o2a, msg);
+      Future<Long> f = context.await(o2, msg);
       futures.add(f);
     }
     assertThat(futures).isNotNull();
@@ -202,7 +205,8 @@ public class AwaitTest {
     List<Long> results = new ArrayList<>();
     for (Future<Long> f : futures) {
       try {
-        results.add(f.get());
+        Long n = f.get();
+        results.add(n);
       } catch (Exception e) {
         results.add(-1L);
       }

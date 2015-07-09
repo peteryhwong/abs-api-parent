@@ -30,7 +30,8 @@ public final class ContextThread extends Thread {
     for (final Thread t : threads) {
       try {
         if (INTERRUPTIBLE_THREADS.contains(t.getClass())) {
-          // Interrupt only the threads only by the context
+          // Interrupt only the thread types that we know we are
+          // allowed.
           t.interrupt();
         }
       } catch (Throwable x) {
@@ -65,7 +66,7 @@ public final class ContextThread extends Thread {
   }
 
   private static String createThreadName() {
-    return "abs-" + COUNTER.incrementAndGet();
+    return "jabs-" + COUNTER.incrementAndGet();
   }
 
 }

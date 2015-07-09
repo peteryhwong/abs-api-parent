@@ -7,7 +7,7 @@ package abs.api;
  * @author Behrooz Nobakht
  * @since 1.0
  */
-public class SystemContext implements Context, Contextual {
+public final class SystemContext implements Context, Contextual {
 
     private static final ThreadInterruptWatchdog THREAD_INTERRUPT_WATCHDOG 
         = new ThreadInterruptWatchdog(ContextThread::shutdown);
@@ -18,14 +18,14 @@ public class SystemContext implements Context, Contextual {
 		return context;
 	}
 	
-	public static void interrupt() {
-	  THREAD_INTERRUPT_WATCHDOG.interrupt();
-	}
-	
 	static {
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
         THREAD_INTERRUPT_WATCHDOG.interrupt();
-      } , "context-shutdown"));
+      } , "jabs-shutdown"));
+      Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+        String msg = "[ERROR] [%s] [%s]";
+        System.err.println(String.format(msg, thread.getName(), throwable.getMessage()));
+      });
 	}
 
 	/**
@@ -75,7 +75,7 @@ public class SystemContext implements Context, Contextual {
 	/** {@inheritDoc} */
 	@Override
 	public void stop() throws Exception {
-		THREAD_INTERRUPT_WATCHDOG.interrupt();
+		SystemContext.context.stop();
 	}
 
 	@Override

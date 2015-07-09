@@ -1,8 +1,6 @@
 package abs.api;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -23,7 +21,6 @@ import javax.annotation.PostConstruct;
 public class LocalContext implements Context {
 
 	private final SystemContext systemContext;
-
 	private final Configuration configuration;
 	private Router router;
 	private Opener opener;
@@ -64,69 +61,29 @@ public class LocalContext implements Context {
 	@PostConstruct
 	@Override
 	public void initialize() throws Exception {
-		this.executor = configuration.geExecutorService();
-
-		Router messageRouter = null;
-		if (configuration.getRouter() != null) {
-			messageRouter = configuration.getRouter();
-		} else {
-			ServiceLoader<Router> routerLoader = ServiceLoader.load(Router.class);
-			for (Iterator<Router> it = routerLoader.iterator(); it.hasNext();) {
-				Router router = it.next();
-				messageRouter = router;
-				break;
-			}
-			if (this.router == null) {
-				messageRouter = new LocalRouter(this);
-			}
+		this.executor = configuration.getExecutorService();
+		
+		Router messageRouter = configuration.getRouter();
+		if (messageRouter == null) {
+          throw new IllegalArgumentException("No " + Router.class + " is defined for this context");
 		}
         LoggingRouter loggingRouter =
             new LoggingRouter(this.configuration.isLoggingEnabled(), this.configuration.getLogPath());
 		this.router = new RouterCollection(messageRouter, loggingRouter);
 		this.router.bind(this);
 
-		if (configuration.getOpener() != null) {
-			this.opener = configuration.getOpener();
-		} else {
-			ServiceLoader<Opener> openerLoader = ServiceLoader.load(Opener.class);
-			for (Iterator<Opener> it = openerLoader.iterator(); it.hasNext();) {
-				Opener opener = it.next();
-				this.opener = opener;
-				break;
-			}
-			if (this.opener == null) {
-				this.opener = new DefaultOpener();
-			}
+		this.opener = configuration.getOpener();
+		if (this.opener == null) {
+		  throw new IllegalArgumentException("No " + Opener.class + " is defined for this context");
 		}
 
-		if (configuration.getInbox() != null) {
-			this.inbox = configuration.getInbox();
-		} else {
-			ServiceLoader<Inbox> inboxlLoader = ServiceLoader.load(Inbox.class);
-			for (Iterator<Inbox> it = inboxlLoader.iterator(); it.hasNext();) {
-				Inbox inbox = it.next();
-				this.inbox = inbox;
-				break;
-			}
-			if (this.inbox == null) {
-				this.inbox = new ContextInbox(executor);
-			}
+		this.inbox = configuration.getInbox();
+		if (this.inbox == null) {
+          throw new IllegalArgumentException("No " + Inbox.class + " is defined for this context");
 		}
 		this.inbox.bind(this);
 
-		ServiceLoader<Notary> notaryLoader = ServiceLoader.load(Notary.class);
-		for (Iterator<Notary> it = notaryLoader.iterator(); it.hasNext();) {
-			Notary notary = it.next();
-			if (notary.getClass() == configuration.getNotary()
-					|| configuration.getNotary().isAssignableFrom(notary.getClass())) {
-				this.notary = notary;
-				break;
-			}
-		}
-		if (this.notary == null) {
-			this.notary = new LocalNotary();
-		}
-
+		this.notary = new LocalNotary();
 		this.referenceFactory = configuration.getReferenceFactory();
 	}
 
@@ -171,9 +128,13 @@ public class LocalContext implements Context {
 	@Override
 	public void execute(Runnable command) {
       try {
+      // Semantics:
+      // Every message to an object should be queued in the
+      // order that it is received. Here, #get() ensures such
+      // order of queueing.
         executor.submit(command).get();
       } catch (InterruptedException | ExecutionException e) {
-        // XXX
+        // Ignore: What can we do??!
       }
 	}
 
