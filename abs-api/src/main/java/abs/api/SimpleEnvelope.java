@@ -13,7 +13,7 @@ public class SimpleEnvelope implements Envelope {
 	private final Reference sender;
 	private final Reference receiver;
 	private final Object message;
-	private final Fut future;
+	private final Response<Object> future;
 	private final long sequence;
 
 	/**
@@ -56,8 +56,8 @@ public class SimpleEnvelope implements Envelope {
 
 	/** {@inheritDoc} */
 	@Override
-	public Fut response() {
-		return future;
+	public <V> Response<V> response() {
+		return (Response<V>) future;
 	}
 
 	/** {@inheritDoc} */
@@ -78,7 +78,7 @@ public class SimpleEnvelope implements Envelope {
 		return sb.append(")").toString();
 	}
 
-    protected Fut createResponse() {
-      return new Fut();
+    protected <V> Response<V> createResponse() {
+      return new Fut<V>();
     }
 }

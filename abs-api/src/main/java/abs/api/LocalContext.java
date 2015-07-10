@@ -146,7 +146,7 @@ public class LocalContext implements Context {
 			for (Runnable task : tasks) {
               if (task instanceof EnveloperRunner) {
                 EnveloperRunner er = (EnveloperRunner) task;
-                Fut f = er.envelope().response();
+                Response<Object> f = er.envelope().response();
                 f.cancel(true);
               }
 			}

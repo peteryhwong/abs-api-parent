@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -46,14 +45,10 @@ public class AwaitTest {
 
     public Long transmit() {
       Callable<Long> message = () -> network.newToken();
-      Future<Long> future = await(network, message);
-      try {
-        Long token = future.get();
-        return token;
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-      }
+      Response<Long> future = await(network, message);
+      Long token = future.getValue();
+      assert token != null;
+      return token;
     }
 
     @Override
@@ -75,14 +70,10 @@ public class AwaitTest {
       Packet packet = new Packet(network);
       context().newActor(packet.simpleName(), packet);
       Callable<Long> message = () -> packet.transmit();
-      Future<Long> done = await(packet, message);
-      try {
-        Long token = done.get();
-        return token;
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-      }
+      Response<Long> done = await(packet, message);
+      Long token = done.getValue();
+      assert token != null;
+      return token;
     }
 
     @Override
@@ -191,7 +182,7 @@ public class AwaitTest {
     Gateway o2 = new Gateway(o1);
     context.newActor("g1", o2);
 
-    final int size = new Random(System.currentTimeMillis()).nextInt(1000);
+    final int size = new Random(System.currentTimeMillis()).nextInt(256);
     List<Future<Long>> futures = new ArrayList<>();
     for (int i = 0; i < size; ++i) {
       Callable<Long> msg = () -> o2.relay();

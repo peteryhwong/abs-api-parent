@@ -1,7 +1,5 @@
 package abs.api;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -36,11 +34,16 @@ import java.util.function.Supplier;
 class ObjectInbox extends AbstractInbox
     implements Opener, Runnable, Supplier<Envelope>, EnvelopeListener {
 
-  private static class ObjectInboxExecutor implements Runnable {
+  /**
+   * An executor to ensure the semantics of "run-to-completion"
+   * for an object's message queue and avoid multiple
+   * simultaneous message execution.
+   */
+  protected static class ObjectInboxExecutor implements Runnable {
 
-    private static final Comparator<EnveloperRunner> CMP =
-        (er1, er2) -> Long.compare(er1.envelope().sequence(), er2.envelope().sequence());
-    private final BlockingQueue<EnveloperRunner> queue = new PriorityBlockingQueue<>(1024, CMP);
+    private final Object mutex = new Object();
+    private final BlockingQueue<EnveloperRunner> queue =
+        new PriorityBlockingQueue<>(512, ENVELOPE_RUNNER_COMPARATOR);
     private final ExecutorService executor;
 
     public ObjectInboxExecutor(ExecutorService executor) {
@@ -54,12 +57,14 @@ class ObjectInbox extends AbstractInbox
 
     @Override
     public void run() {
-      while (!queue.isEmpty()) {
-        EnveloperRunner er = queue.poll();
-        if (er == null) {
-          continue;
+      synchronized (mutex) {
+        while (!queue.isEmpty()) {
+          EnveloperRunner er = queue.poll();
+          if (er == null) {
+            continue;
+          }
+          execute(er);
         }
-        execute(er);
       }
     }
 
@@ -73,9 +78,14 @@ class ObjectInbox extends AbstractInbox
 
   }
 
+  protected static final Comparator<Envelope> ENVELOPE_COMPARATOR =
+      (e1, e2) -> Long.compare(e1.sequence(), e2.sequence());
+  protected static final Comparator<EnveloperRunner> ENVELOPE_RUNNER_COMPARATOR =
+      (er1, er2) -> ENVELOPE_COMPARATOR.compare(er1.envelope(), er2.envelope());
   private final Object receiver;
   private final ObjectInboxExecutor executor;
-  private final BlockingQueue<Envelope> unprocessed = new LinkedBlockingQueue<>();
+  private final BlockingQueue<Envelope> unprocessed =
+      new PriorityBlockingQueue<>(512, ENVELOPE_COMPARATOR);
   private final BlockingQueue<Envelope> awaiting = new LinkedBlockingQueue<>();
   private final AtomicReference<Envelope> processing = new AtomicReference<>(null);
   private final AtomicBoolean sweeping = new AtomicBoolean(false);
@@ -203,9 +213,7 @@ class ObjectInbox extends AbstractInbox
     if (q.isEmpty()) {
       return null;
     }
-    Envelope env =
-        Collections.min(new ArrayList<>(q), (e1, e2) -> Long.compare(e1.sequence(), e2.sequence()));
-    return env;
+    return q.peek();
   }
 
 }

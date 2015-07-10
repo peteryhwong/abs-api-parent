@@ -42,11 +42,11 @@ class EnveloperRunner implements Runnable {
   @Override
   public final void run() {
     final Object msg = envelope.message();
-    final Fut response = envelope.response();
+    final Response<Object> response = envelope.response();
     executeMessage(msg, response);
   }
 
-  protected void executeMessage(final Object msg, final Fut response) {
+  protected void executeMessage(final Object msg, final Response<Object> response) {
     if (msg instanceof Runnable) {
       executeRunnableEnvelope(msg, response);
       return;
@@ -65,7 +65,7 @@ class EnveloperRunner implements Runnable {
     return envelope;
   }
 
-  private void executeCallableMessage(final Object msg, final Fut response) {
+  private void executeCallableMessage(final Object msg, final Response<Object> response) {
     try {
       onOpen();
       Object result = ((Callable<?>) msg).call();
@@ -77,7 +77,7 @@ class EnveloperRunner implements Runnable {
     }
   }
 
-  private void executeRunnableEnvelope(final Object msg, final Fut response) {
+  private void executeRunnableEnvelope(final Object msg, final Response<Object> response) {
     try {
       onOpen();
       ((Runnable) msg).run();

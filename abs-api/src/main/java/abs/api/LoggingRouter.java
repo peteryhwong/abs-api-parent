@@ -59,11 +59,14 @@ public class LoggingRouter implements Router {
     private final String toString;
 
     LoggingEvent(String from, String to, String message) {
-      this.time = Duration.between(TIME_ORIGIN, Instant.now()).toMillis();
+      final Instant now = Instant.now();
+      this.time = now.toEpochMilli();
       this.from = from;
       this.to = to;
       this.message = message;
-      this.toString = String.join(";", Long.toString(time), this.from, this.to, this.message);
+      final long relativeTime = Duration.between(TIME_ORIGIN, now).toMillis();
+      this.toString = String.join(";", Long.toString(time), Long.toString(relativeTime), this.from,
+          this.to, this.message);
     }
 
     @Override
@@ -208,10 +211,6 @@ public class LoggingRouter implements Router {
   @Override
   public void bind(Context context) {}
 
-  /**
-   * Create a simple representation of object filtering unknown
-   * class information.
-   */
   protected String toString(Object o) {
     if (o == null) {
       return "null";

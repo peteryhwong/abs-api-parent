@@ -55,20 +55,20 @@ public class DefaultOpener implements Opener {
 	 *            a V object.
 	 * @return a {@link java.util.concurrent.Future} object.
 	 */
-	protected <V> Future<V> execute(final Envelope envelope, final Object target) {
-		final Fut future = envelope.response();
+	protected <V> Response<V> execute(final Envelope envelope, final Object target) {
+		final Response<V> response = envelope.response();
 		Runnable task = createEnvelopeTask(envelope, target);
 		if (task == null) {
-			future.completeExceptionally(new IllegalArgumentException("Invalid message: "
+			response.completeExceptionally(new IllegalArgumentException("Invalid message: "
 					+ envelope.message()));
 		} else {
 			try {
 				executeEnvelopeTask(task);
 			} catch (Throwable e) {
-				future.completeExceptionally(e);
+				response.completeExceptionally(e);
 			}
 		}
-		return (Future<V>) future;
+		return response;
 	}
 
 	/**
@@ -134,7 +134,7 @@ public class DefaultOpener implements Opener {
 	 */
 	protected Runnable fromMethodReferenceEnvelope(final Envelope envelope, final Object target) {
 		return () -> {
-			final Fut future = envelope.response();
+			final Response<Object> future = envelope.response();
 			try {
 				MethodReference method = (MethodReference) envelope.message();
 				if (target == null) {
@@ -167,7 +167,7 @@ public class DefaultOpener implements Opener {
 	 */
 	protected Runnable fromActorEnvelope(final Envelope envelope, final Behavior target) {
 		return () -> {
-			final Fut future = envelope.response();
+			final Response<Object> future = envelope.response();
 			try {
 				Object result = target.respond(envelope.message());
 				future.complete(result);

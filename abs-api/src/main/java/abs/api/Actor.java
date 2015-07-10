@@ -170,7 +170,7 @@ public interface Actor extends Reference, Comparable<Reference> {
      * @return the future value to capture the result of the
      *         message
      */
-    default <V> Future<V> send(Object to, Object message) {
+    default <V> Response<V> send(Object to, Object message) {
       final Reference from = self();
       final Reference toRef = reference(to);
       final Envelope envelope = new SimpleEnvelope(from, toRef, message);
@@ -193,7 +193,7 @@ public interface Actor extends Reference, Comparable<Reference> {
      * @return the future value to capture the result of the
      *         message
      */
-    default <V> Future<V> await(Object to, Object message) {
+    default <V> Response<V> await(Object to, Object message) {
       final Reference from = self();
       final Reference toRef = reference(to);
       final Envelope envelope = new AwaitEnvelope(from, toRef, message);
@@ -209,8 +209,8 @@ public interface Actor extends Reference, Comparable<Reference> {
      * @param <V> The expected type of the response
      * @return the response of the reply message
      */
-    default <V> Future<V> reply(Object message) {
-      Future<V> response = send(sender(), message);
+    default <V> Response<V> reply(Object message) {
+      Response<V> response = send(sender(), message);
       return response;
     }
 

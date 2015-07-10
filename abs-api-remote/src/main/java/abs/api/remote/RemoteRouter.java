@@ -69,8 +69,8 @@ public class RemoteRouter implements Router {
 		}
 
 		@Override
-		public <T extends Future<?>> T response() {
-			final CompletableFuture<?> cf = envelope.response();
+		public <V> abs.api.Response<V> response() {
+			final abs.api.Response<V> cf = envelope.response();
 			try {
 				final Response result = this.response.get(30, TimeUnit.SECONDS);
 				Status status = Status.fromStatusCode(result.getStatus());
