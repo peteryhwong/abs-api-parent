@@ -79,6 +79,6 @@ public class SimpleEnvelope implements Envelope {
 	}
 
     protected <V> Response<V> createResponse() {
-      return new Fut<V>();
+      return new ContextResponse<V>();
     }
 }

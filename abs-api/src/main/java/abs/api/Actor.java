@@ -198,6 +198,7 @@ public interface Actor extends Reference, Comparable<Reference> {
       final Reference toRef = reference(to);
       final Envelope envelope = new AwaitEnvelope(from, toRef, message);
       context().execute(() -> context().router().route(envelope));
+      ((ContextResponse<?>) envelope.response()).await();
       return envelope.response();
     }
     

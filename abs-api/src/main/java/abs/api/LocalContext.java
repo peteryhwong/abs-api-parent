@@ -1,8 +1,8 @@
 package abs.api;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 
@@ -28,6 +28,7 @@ public class LocalContext implements Context {
 	private Notary notary;
 	private ExecutorService executor;
 	private ReferenceFactory referenceFactory;
+	private final ExecutorService routerExecutor = Executors.newSingleThreadExecutor();
 
 	/**
 	 * <p>
@@ -132,8 +133,8 @@ public class LocalContext implements Context {
       // Every message to an object should be queued in the
       // order that it is received. Here, #get() ensures such
       // order of queueing.
-        executor.submit(command).get();
-      } catch (InterruptedException | ExecutionException e) {
+        routerExecutor.submit(command);
+      } catch (Exception e) {
         // Ignore: What can we do??!
       }
 	}
@@ -142,6 +143,7 @@ public class LocalContext implements Context {
 	@Override
 	public void stop() throws Exception {
 		try {
+		    routerExecutor.shutdownNow();
 			List<Runnable> tasks = executor.shutdownNow();
 			for (Runnable task : tasks) {
               if (task instanceof EnveloperRunner) {

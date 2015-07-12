@@ -1,5 +1,6 @@
 package abs.api;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * A dedicated {@link Inbox} for a receiver of an
@@ -117,12 +119,17 @@ class ObjectInbox extends AbstractInbox
   }
 
   public void run() {
-    if (!sweeping.compareAndSet(false, true)) {
+    if (isBusy() || !sweeping.compareAndSet(false, true)) {
       return;
     }
-    Envelope envelope = get();
-    if (envelope != null) {
-      open(envelope, receiver);
+    for (Envelope envelope = get(); envelope != null; envelope = get()) {
+      super.onOpen(envelope, this, receiver);
+      EnveloperRunner runner = createEnvelopeRunner(envelope);
+      runner.run();
+//      System.out.println("RUN --- " + Thread.currentThread().getName() + " " + receiver + " "
+//          + envelope.sequence() + " "
+//          + unprocessed.stream().map(e -> Long.valueOf(e.sequence())).collect(Collectors.toList())
+//          + " => " + envelope.response().getValue() + "   " + envelope.response());
     }
     sweeping.getAndSet(false);
   }
@@ -175,6 +182,10 @@ class ObjectInbox extends AbstractInbox
     return !awaiting.isEmpty();
   }
 
+  protected boolean isRunning() {
+    return sweeping.get();
+  }
+
   protected Envelope lastAwaitingEnvelope() {
     return this.awaiting.peek();
   }
@@ -210,10 +221,16 @@ class ObjectInbox extends AbstractInbox
   }
 
   protected Envelope nextEnvelope(BlockingQueue<Envelope> q) {
-    if (q.isEmpty()) {
+    if (isBusy() || q.isEmpty()) {
       return null;
     }
-    return q.peek();
+    Envelope env = q.peek();
+    return env;
+  }
+
+  private void log(Object o) {
+    System.err.println(String.format("%s %s %s %s", Instant.now().toString(),
+        Thread.currentThread().getName(), receiver, o.toString()));
   }
 
 }

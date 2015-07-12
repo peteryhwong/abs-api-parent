@@ -22,8 +22,8 @@ class AwaitEnvelope extends SimpleEnvelope {
   }
   
   @Override
-  protected Fut createResponse() {
-    return new Fut(true);
+  protected ContextResponse createResponse() {
+    return new ContextResponse(true);
   }
 
 }

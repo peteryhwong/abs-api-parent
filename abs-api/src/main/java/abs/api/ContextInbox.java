@@ -1,6 +1,7 @@
 package abs.api;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -47,7 +48,7 @@ class ContextInbox extends AbstractInbox {
         return;
       }
       while (running.get()) {
-        execute(inboxes, inboxes.size() > 1000);
+        execute(inboxes, inboxes.size() > 10000);
       }
     }
 
@@ -73,9 +74,11 @@ class ContextInbox extends AbstractInbox {
 
   protected void execute(Collection<ObjectInbox> inboxes, final boolean parallel) {
     if (parallel) {
-      inboxes.parallelStream().forEach(oi -> executor.submit(oi));
+      inboxes.parallelStream().forEach((Runnable oi) -> executor.submit(oi));
     } else {
-      inboxes.stream().forEach(oi -> executor.submit(oi));
+      inboxes.stream().filter(oi -> !oi.isRunning() && !oi.isBusy()).forEach(oi -> {
+        CompletableFuture.runAsync(oi, executor);
+      });
     }
   }
 

@@ -1,7 +1,6 @@
 package abs.api;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 /**
  * A context provides a set of interfaces that allows regulating
@@ -135,7 +134,7 @@ public interface Context extends Lifecycle, Executor {
 	 *            message
 	 * @return the result of the message as a future
 	 */
-	default <V> Future<V> send(Object to, Object message) {
+	default <V> Response<V> send(Object to, Object message) {
 		return Actor.NOBODY.send(to, message);
 	}
 
@@ -156,7 +155,7 @@ public interface Context extends Lifecycle, Executor {
      * @return the future value to capture the result of the
      *         message
      */
-    default <V> Future<V> await(Object to, Object message) {
+    default <V> Response<V> await(Object to, Object message) {
       return Actor.NOBODY.await(to, message);
     }
     

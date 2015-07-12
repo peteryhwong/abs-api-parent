@@ -32,6 +32,11 @@ public class AwaitTest {
     public String simpleName() {
       return "network";
     }
+
+    @Override
+    public String toString() {
+      return simpleName();
+    }
   }
 
   static class Packet implements Actor {
@@ -55,6 +60,11 @@ public class AwaitTest {
     public String simpleName() {
       return "Packet@" + Integer.toHexString(hashCode());
     }
+
+    @Override
+    public String toString() {
+      return simpleName();
+    }
   }
 
   static class Gateway implements Actor {
@@ -66,19 +76,35 @@ public class AwaitTest {
       this.network = network;
     }
 
-    public Long relay() {
-      Packet packet = new Packet(network);
-      context().newActor(packet.simpleName(), packet);
-      Callable<Long> message = () -> packet.transmit();
-      Response<Long> done = await(packet, message);
-      Long token = done.getValue();
-      assert token != null;
-      return token;
+    public List<Long> relay(final int size) {
+      List<Response<Long>> result = new ArrayList<>();
+      for (int i = 1; i <= size; ++i) {
+        Packet packet = new Packet(network);
+        context().newActor(packet.simpleName(), packet);
+        Callable<Long> message = () -> packet.transmit();
+        Response<Long> res = await(packet, message);
+        result.add(res);
+      }
+      List<Long> tokens = new ArrayList<>();
+      for (int i = 0; i < result.size(); ++i) {
+        Response<Long> r = result.get(i);
+        // System.out.println("Waiting= " + r);
+        Long t = r.getValue();
+        // System.out.println("t=" + t);
+        assertThat(t).isNotNull();
+        tokens.add(t);
+      }
+      return tokens;
     }
 
     @Override
     public String simpleName() {
       return "gateway";
+    }
+
+    @Override
+    public String toString() {
+      return simpleName();
     }
 
   }
@@ -156,17 +182,17 @@ public class AwaitTest {
         Configuration.newConfiguration().withExecutorService(executor).build();
     Context context = new LocalContext(configuration);
 
-    Network o1 = new Network();
-    context.newActor("n1", o1);
+    Network network = new Network();
+    context.newActor("network", network);
 
-    Gateway o2 = new Gateway(o1);
-    context.newActor("g1", o2);
+    Gateway gateway = new Gateway(network);
+    context.newActor("gateway", gateway);
 
-    Callable<Long> message = () -> o2.relay();
-    Future<Long> f = context.await(o2, message);
-    assertThat(f).isNotNull();
-    assertThat(f.isDone()).isTrue();
-    assertThat(f.get()).isEqualTo(o1.token.longValue());
+    Callable<List<Long>> message = () -> gateway.relay(1);
+    Response<List<Long>> r = context.await(gateway, message);
+    List<Long> tokens = r.getValue();
+    assertThat(r).isNotNull();
+    assertThat(tokens.get(0)).isEqualTo(network.token.longValue());
   }
 
   @Test
@@ -176,37 +202,22 @@ public class AwaitTest {
         Configuration.newConfiguration().withExecutorService(executor).build();
     Context context = new LocalContext(configuration);
 
-    Network o1 = new Network();
-    context.newActor("n1", o1);
+    Network network = new Network();
+    context.newActor("network", network);
 
-    Gateway o2 = new Gateway(o1);
-    context.newActor("g1", o2);
+    Gateway gateway = new Gateway(network);
+    context.newActor("gateway", gateway);
 
-    final int size = new Random(System.currentTimeMillis()).nextInt(256);
-    List<Future<Long>> futures = new ArrayList<>();
-    for (int i = 0; i < size; ++i) {
-      Callable<Long> msg = () -> o2.relay();
-      Future<Long> f = context.await(o2, msg);
-      futures.add(f);
-    }
-    assertThat(futures).isNotNull();
-    assertThat(futures).isNotEmpty();
-    assertThat(futures).hasSize(size);
-
-    List<Long> results = new ArrayList<>();
-    for (Future<Long> f : futures) {
-      try {
-        Long n = f.get();
-        results.add(n);
-      } catch (Exception e) {
-        results.add(-1L);
-      }
-    };
-    assertThat(results).isNotNull();
-    assertThat(results).isNotEmpty();
-    assertThat(results).containsNoDuplicates();
-    assertThat(results).isStrictlyOrdered();
-    assertThat(results.get(size - 1)).isEqualTo(o1.token.get());
+    final int size = new Random(System.currentTimeMillis()).nextInt(256) + 128;
+    Callable<List<Long>> msg = () -> gateway.relay(size);
+    Response<List<Long>> r = context.await(gateway, msg);
+    assertThat(r).isNotNull();
+    List<Long> tokens = r.getValue();
+    assertThat(tokens).isNotEmpty();
+    assertThat(tokens).hasSize(size);
+    assertThat(tokens).containsNoDuplicates();
+    assertThat(tokens).isStrictlyOrdered();
+    assertThat(tokens.get(size - 1)).isEqualTo(network.token.get());
   }
 
 }

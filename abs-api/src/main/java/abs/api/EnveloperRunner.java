@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  * {@link Runnable} from {@link Envelope#message()}. Execution
  * of the message is contained and no exception is propagated.
  */
-class EnveloperRunner implements Runnable {
+class EnveloperRunner implements Runnable, Comparable<EnveloperRunner> {
 
   private final Envelope envelope;
   private final Context context;
@@ -44,6 +44,11 @@ class EnveloperRunner implements Runnable {
     final Object msg = envelope.message();
     final Response<Object> response = envelope.response();
     executeMessage(msg, response);
+  }
+
+  @Override
+  public int compareTo(EnveloperRunner o) {
+    return Long.compare(envelope.sequence(), o.envelope.sequence());
   }
 
   protected void executeMessage(final Object msg, final Response<Object> response) {
