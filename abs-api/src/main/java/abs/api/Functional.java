@@ -147,7 +147,7 @@ public final class Functional {
   }
 
   protected static <E> Set<E> set_java(List<E> list) {
-    return new HashSet<>(list);
+    return list == null ? new HashSet<>() : new HashSet<>(list);
   }
 
   protected static <E> Set<E> set_func(List<E> list) {
