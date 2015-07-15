@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -188,7 +189,7 @@ public final class Functional {
     return set_java(list);
   }
 
-  public static <E> boolean contains(Set<E> set, E e) {
+  public static <E> boolean contains(E e, Set<E> set) {
     return containsCollection(e, set);
   }
 
@@ -239,7 +240,7 @@ public final class Functional {
     if (map == null) {
       map = emptyMap();
     }
-    map.putIfAbsent(key, value);
+    map.put(key, value);
     return map;
   }
 
@@ -260,6 +261,63 @@ public final class Functional {
   public static <K, V> Map<K, V> map(Collection<Entry<K, V>> entries) {
     return new ArrayList<>(entries).stream().collect(
         Collectors.toConcurrentMap((Entry<K, V> e) -> e.getKey(), (Entry<K, V> e) -> e.getValue()));
+  }
+
+  public static <K, V> Map<K, V> removeKey(K key, Map<K, V> map) {
+    map.remove(key);
+    return map;
+  }
+
+  public static <K, V> Collection<K> keys(Map<K, V> map) {
+    return map.keySet();
+  }
+
+  public static <K, V> Collection<V> values(Map<K, V> map) {
+    return map.values();
+  }
+
+  public static <K, V> Optional<V> lookup(K key, Map<K, V> map) {
+    return Optional.ofNullable(map.get(key));
+  }
+
+  public static <K, V> V lookupDefault(K key, V defaultValue, Map<K, V> map) {
+    return lookup(key, map).orElse(defaultValue);
+  }
+
+  public static <K, V> Map<K, V> insert(Entry<K, V> pair, Map<K, V> map) {
+    return insert(pair.getKey(), pair.getValue(), map);
+  }
+
+  // --- Strings
+
+  public static String substr(String s, int beginIndex, int length) {
+    return s.substring(beginIndex, beginIndex + length);
+  }
+
+  public static int strlen(String s) {
+    return s.length();
+  }
+
+  public static <X> String toString(X x) {
+    return Objects.toString(x, "null");
+  }
+
+  // --- I/O
+
+  public static void println(String format, Object... args) {
+    System.out.println(String.format(format, args));
+  }
+
+  public static void println(Object o) {
+    System.out.println(o);
+  }
+
+  public static void print(Object o) {
+    System.out.print(o);
+  }
+
+  public static String readln() {
+    return System.console().readLine();
   }
 
   // --- Internal
