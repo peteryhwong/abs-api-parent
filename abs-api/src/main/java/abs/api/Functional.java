@@ -1,6 +1,9 @@
 package abs.api;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,6 +18,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -318,6 +322,68 @@ public final class Functional {
 
   public static String readln() {
     return System.console().readLine();
+  }
+
+  // --- Time
+
+  public static Duration duration(long duration, TimeUnit unit) {
+    return Duration.ofMillis(unit.toMillis(duration));
+  }
+
+  public static Duration duration(long millis) {
+    return Duration.ofMillis(millis);
+  }
+
+  public static boolean durationLessThan(Duration d1, Duration d2) {
+    return d1.compareTo(d2) < 0;
+  }
+
+  public static Duration subtractFromDuration(Duration d, long v) {
+    if (isDurationInfinite(d)) {
+      return d;
+    }
+    Duration d2 = d.minusMillis(v);
+    return d2.isNegative() || d2.isZero() ? d : d2;
+  }
+
+  public static Duration infinity() {
+    return ChronoUnit.FOREVER.getDuration();
+  }
+
+  public static boolean isDurationInfinite(Duration d) {
+    return d == null || infinity().equals(d);
+  }
+
+  public static long currentms() {
+    return ContextClock.CLOCK.millis();
+  }
+
+  public static Instant now() {
+    return ContextClock.CLOCK.instant();
+  }
+
+  public static long timeDifference(Instant t1, Instant t2) {
+    return Duration.between(t1, t2).abs().toMillis();
+  }
+
+  public static Instant addDuration(Instant t, Duration d) {
+    return t.plus(d);
+  }
+
+  public static Instant subtractDuration(Instant t, Duration d) {
+    return t.minus(d);
+  }
+
+  public static Duration lowlevelDeadline(Long millis) {
+    return millis == null || millis <= 0 ? infinity() : duration(millis);
+  }
+
+  public static Duration deadline(Duration d) {
+    return d;
+  }
+
+  public static Duration deadline(Long millis) {
+    return lowlevelDeadline(millis);
   }
 
   // --- Internal
