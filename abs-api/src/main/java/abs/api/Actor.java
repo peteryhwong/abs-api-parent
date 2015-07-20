@@ -1,19 +1,15 @@
 package abs.api;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * An actor is a reference that exposes a set of methods to send
  * messages to another actor. There are a number of ways that a message
- * would have meaning as an executable entity in this implementation:
- * <ul>
- * <li>an instance of {@link Runnable} or {@link Callable} exposed by
- * {@link #ask(Object, Object)}
- * <li>the recipient of the message is an instance of {@link Behavior}
- * which leads to running {@link Behavior#respond(Object)}
- * </ul>
+ * would have meaning as an executable entity in this implementation.
  * 
  * <p>
  * Every actor is registered with an instance of {@link Context}. A
@@ -131,34 +127,6 @@ public interface Actor extends Reference, Comparable<Reference> {
 	}
 
     /**
-     * Sends a general message to a recipient and captures the
-     * result into an instance of {@link Future}.
-     * 
-     * @see Context
-     * @see Router
-     * 
-     * @param <V> the type of the result expected from the future
-     *        value
-     * @param to the receiver of the message
-     * @param message the message to be sent to the receiver
-     * @return a future value to capture the result of processing
-     *         the message. The future value may throw exception
-     *         is {@link Future#get()} is used as a result of
-     *         either failure in processing the message or
-     *         actually the processing of the message decided to
-     *         fail the message result. The user of the future
-     *         value may inspect into causes of the exception to
-     *         identify the reasons.
-     * @throws Exception if the response {@link Future}
-     *         fails. In this case, the cause is wrapped inside
-     *         the thrown exception.
-     */
-    default <V> V ask(Object to, Object message) throws Exception {
-      final Future<V> response = send(to, message);
-      return response.get();
-    }
-
-    /**
      * Sends a message to a reference.
      *
      * @param <V> the type of the future value of the response of
@@ -183,8 +151,10 @@ public interface Actor extends Reference, Comparable<Reference> {
      * that the sender of the message awaits on the response. The
      * usage of this method when necessary ensures that, for an
      * object, the object might be awaiting on an arbitrary number
-     * of envelopes. However, it is ensure that only one message
+     * of envelopes. However, it is ensured that only one message
      * at a time is processed inside the receiver object.
+     * 
+     * @see #await(Object, Object, Duration)
      * 
      * @param <V> the type of the future value of the response of
      *        the message
@@ -194,11 +164,61 @@ public interface Actor extends Reference, Comparable<Reference> {
      *         message
      */
     default <V> Response<V> await(Object to, Object message) {
+      return await(to, message, null);
+    }
+    
+    /**
+     * Semantics hold similar to that of
+     * {@link #await(Object, Object)}. Additionally, await should
+     * complete within the time boundaries specified by provided
+     * deadline. If await fails with a timeout, then
+     * {@link Response#getException()} holds the timeout
+     * exception.
+     * 
+     * @param <V> the type of the future value of the response
+     * @param to the receiver of the message
+     * @param message the message itself
+     * @param deadline the duration within which the response
+     *        should complete
+     * @return the response of the message
+     */
+    default <V> Response<V> await(Object to, Object message, Duration deadline) {
       final Reference from = self();
       final Reference toRef = reference(to);
       final Envelope envelope = new AwaitEnvelope(from, toRef, message);
       context().execute(() -> context().router().route(envelope));
-      ((ContextResponse<?>) envelope.response()).await();
+      envelope.response().await(deadline);
+      return envelope.response();
+    }
+    
+    /**
+     * Similar to {@link #await(Object, Object)} and different in
+     * the sense that the await property holds on a "boolean"
+     * expression encapsulated as an instance of {@link Supplier}.
+     * Awaits continues until the supplier provides a
+     * <code>true</code> value.
+     * 
+     * @param to the receiver of the message
+     * @param condition the supplier of a boolean condition
+     * @return the response of this await over a {@link Boolean}
+     *         value
+     */
+    default Response<Boolean> await(Object to, Supplier<Boolean> condition) {
+      final Predicate<Supplier<Boolean>> predicate = supplier -> {
+        Boolean currentValue = supplier.get();
+        if (currentValue != null && currentValue) {
+          return true;
+        }
+        return await(to, condition).getValue();
+      };
+      
+      final Callable<Boolean> message = () -> predicate.test(condition);
+      final Reference from = self();
+      final Reference toRef = reference(to);
+      final Envelope envelope = new AwaitEnvelope(from, toRef, message);
+      
+      context().execute(() -> context().router().route(envelope));
+      context().execute(() -> envelope.response().await(null));
       return envelope.response();
     }
     

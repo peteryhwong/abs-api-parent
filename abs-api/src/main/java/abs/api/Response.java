@@ -1,5 +1,6 @@
 package abs.api;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
@@ -58,6 +59,20 @@ public interface Response<V> extends Future<V>, CompletionStage<V> {
    *         holds an exception
    */
   V getValue();
+
+  /**
+   * Potentially await until this response is ready. The await
+   * can be specified by a deadline which is a {@link Duration}.
+   * The deadline can be <code>null</code> and different
+   * implementation might or might honor this deadline. If the
+   * implementation honors the deadline, then after returning,
+   * {@link #getValue()} should also return immediately.
+   * 
+   * @param deadline the maximum duration accepted to wait until
+   *        this response is ready and {@link #getValue()} would
+   *        return immediately
+   */
+  void await(Duration deadline);
 
   /**
    * Get the exception of this response.

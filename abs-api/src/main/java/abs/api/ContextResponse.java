@@ -1,7 +1,10 @@
 package abs.api;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * An internal implementation of {@link Response} extending over
@@ -90,6 +93,23 @@ class ContextResponse<V> extends CompletableFuture<V>implements Response<V> {
     }
   }
 
+  @Override
+  public void await(Duration deadline) {
+    if (!await) {
+      return;
+    }
+    if (Functional.isDurationInfinite(deadline)) {
+      await();
+      return;
+    }
+    try {
+      V object = super.get(deadline.toMillis(), TimeUnit.MILLISECONDS);
+      complete(object);
+    } catch (Throwable e) {
+      doCompleteExceptionally(e);
+    }
+  }
+
   /**
    * Await on this response if necessary until it's done or it
    * fails.
@@ -102,8 +122,21 @@ class ContextResponse<V> extends CompletableFuture<V>implements Response<V> {
       V object = super.get();
       complete(object);
     } catch (Throwable e) {
-      completeExceptionally(e);
+      doCompleteExceptionally(e);
     }
+  }
+
+  protected void doCompleteExceptionally(Throwable t) {
+    if (t instanceof TimeoutException) {
+      completeExceptionally(t);
+      return;
+    }
+    Throwable throwable = t;
+    Throwable cause;
+    while ((cause = throwable.getCause()) != null) {
+      throwable = cause;
+    }
+    completeExceptionally(throwable);
   }
 
 }
