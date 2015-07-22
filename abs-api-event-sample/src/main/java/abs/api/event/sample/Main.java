@@ -24,7 +24,7 @@ public class Main {
 	}
 
 	public void start() throws Exception {
-		a1.ask(a2, "a random message");
+		a1.send(a2, "a random message").getValue();
 	}
 
 }
