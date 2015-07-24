@@ -86,6 +86,8 @@ public class LocalContext implements Context {
 
 		this.notary = new LocalNotary();
 		this.referenceFactory = configuration.getReferenceFactory();
+		
+		newActor(Actor.NOBODY.simpleName(), Actor.NOBODY);
 	}
 
 	/** {@inheritDoc} */

@@ -211,12 +211,10 @@ public interface Actor extends Reference, Comparable<Reference> {
         }
         return await(to, condition).getValue();
       };
-      
       final Callable<Boolean> message = () -> predicate.test(condition);
       final Reference from = self();
       final Reference toRef = reference(to);
       final Envelope envelope = new AwaitEnvelope(from, toRef, message);
-      
       context().execute(() -> context().router().route(envelope));
       context().execute(() -> envelope.response().await(null));
       return envelope.response();

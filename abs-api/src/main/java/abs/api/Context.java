@@ -8,8 +8,8 @@ import java.util.concurrent.Executor;
  * are:
  * <ul>
  * <li>an {@link Router} responsible to route the messages to their
- * recipients. Routing of a message starts from
- * {@link Actor#ask(Object, Object)} that delegates to its bound context.
+ * recipients. Routing of a message starts from a method such as 
+ * {@link Actor#send(Object, Object)} that delegates to its bound context.
  * <li>a {@link Notary} that acts as a registry of actor references and
  * object in the concurrent system.
  * <li>possibly a set of {@link Inbox} instances each of which (or
@@ -32,8 +32,8 @@ import java.util.concurrent.Executor;
  * @author Behrooz Nobakht
  * @since 1.0
  */
-public interface Context extends Lifecycle, Executor {
-
+public interface Context extends Lifecycle, Executor, Timed {
+  
 	/**
 	 * Creates an instance of {@link Actor} with the provided name and
 	 * the object that the reference binds to. It is left to the

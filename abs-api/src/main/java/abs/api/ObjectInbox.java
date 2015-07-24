@@ -1,18 +1,13 @@
 package abs.api;
 
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * A dedicated {@link Inbox} for a receiver of an
@@ -36,61 +31,17 @@ import java.util.stream.Collectors;
 class ObjectInbox extends AbstractInbox
     implements Opener, Runnable, Supplier<Envelope>, EnvelopeListener {
 
-  /**
-   * An executor to ensure the semantics of "run-to-completion"
-   * for an object's message queue and avoid multiple
-   * simultaneous message execution.
-   */
-  protected static class ObjectInboxExecutor implements Runnable {
-
-    private final Object mutex = new Object();
-    private final BlockingQueue<EnveloperRunner> queue =
-        new PriorityBlockingQueue<>(512, ENVELOPE_RUNNER_COMPARATOR);
-    private final ExecutorService executor;
-
-    public ObjectInboxExecutor(ExecutorService executor) {
-      this.executor = executor;
-    }
-
-    protected void enqueue(EnveloperRunner er) {
-      queue.offer(er);
-      run();
-    }
-
-    @Override
-    public void run() {
-      synchronized (mutex) {
-        while (!queue.isEmpty()) {
-          EnveloperRunner er = queue.poll();
-          if (er == null) {
-            continue;
-          }
-          execute(er);
-        }
-      }
-    }
-
-    protected void execute(EnveloperRunner er) {
-      try {
-        executor.submit(er).get();
-      } catch (InterruptedException | ExecutionException e) {
-        // Ignore
-      }
-    }
-
-  }
-
   protected static final Comparator<Envelope> ENVELOPE_COMPARATOR =
       (e1, e2) -> Long.compare(e1.sequence(), e2.sequence());
   protected static final Comparator<EnveloperRunner> ENVELOPE_RUNNER_COMPARATOR =
       (er1, er2) -> ENVELOPE_COMPARATOR.compare(er1.envelope(), er2.envelope());
+
   private final Object receiver;
-  private final ObjectInboxExecutor executor;
   private final BlockingQueue<Envelope> unprocessed =
       new PriorityBlockingQueue<>(512, ENVELOPE_COMPARATOR);
-  private final BlockingQueue<Envelope> awaiting = new LinkedBlockingQueue<>();
-  private final AtomicReference<Envelope> processing = new AtomicReference<>(null);
-  private final AtomicBoolean sweeping = new AtomicBoolean(false);
+
+  private boolean awaiting = false;
+  private AtomicReference<Envelope> processing = new AtomicReference<Envelope>(null);
 
   /**
    * Ctor
@@ -101,51 +52,39 @@ class ObjectInbox extends AbstractInbox
    */
   public ObjectInbox(Object receiver, ExecutorService executor) {
     this.receiver = receiver;
-    this.executor = new ObjectInboxExecutor(executor);
   }
 
   @Override
   public <V> Future<V> post(Envelope envelope, Object receiver) {
     assert receiver == this.receiver : "Mismatch " + this.receiver + " : " + receiver;
     unprocessed.offer(envelope);
-    return null;
+    return envelope.response();
   }
 
   @Override
   public <V> Future<V> open(Envelope envelope, Object target) {
-    super.onOpen(envelope, this, target);
-    executor.enqueue(createEnvelopeRunner(envelope));
     return envelope.response();
   }
 
   public void run() {
-    if (isBusy() || !sweeping.compareAndSet(false, true)) {
-      return;
-    }
     for (Envelope envelope = get(); envelope != null; envelope = get()) {
       super.onOpen(envelope, this, receiver);
       EnveloperRunner runner = createEnvelopeRunner(envelope);
       runner.run();
-//      System.out.println("RUN --- " + Thread.currentThread().getName() + " " + receiver + " "
-//          + envelope.sequence() + " "
-//          + unprocessed.stream().map(e -> Long.valueOf(e.sequence())).collect(Collectors.toList())
-//          + " => " + envelope.response().getValue() + "   " + envelope.response());
     }
-    sweeping.getAndSet(false);
+    Thread.yield();
   }
 
   @Override
   public Envelope get() {
-    if (isBusy()) {
+    if (processing.get() != null) {
       return null;
     }
     final Envelope envelope = nextEnvelope(unprocessed);
     if (envelope == null) {
       return null;
     }
-    if (!processing.compareAndSet(null, envelope)) {
-      return null;
-    }
+    processing.compareAndSet(null, envelope);
     return envelope;
   }
 
@@ -165,29 +104,29 @@ class ObjectInbox extends AbstractInbox
     }
   }
 
+  @Override
+  public String toString() {
+    Reference ref = context.reference(receiver);
+    boolean busy = isProcessingEnvelope();
+    int size = unprocessed.size();
+    return "ObjectInbox[owner=" + ref + ",busy=" + busy + ",queue=" + size + "]";
+  }
+
   protected void onAwaitStart(Envelope envelope, Context context) {
-    this.awaiting.offer(envelope);
+    this.awaiting = true;
     this.processing.getAndSet(null);
   }
 
   protected void onAwaitEnd(Envelope envelope, Context context) {
-    this.awaiting.remove(envelope);
+    this.awaiting = false;
   }
 
-  protected boolean isBusy() {
+  protected boolean isProcessingEnvelope() {
     return processing.get() != null;
   }
 
   protected boolean isAwaiting() {
-    return !awaiting.isEmpty();
-  }
-
-  protected boolean isRunning() {
-    return sweeping.get();
-  }
-
-  protected Envelope lastAwaitingEnvelope() {
-    return this.awaiting.peek();
+    return awaiting;
   }
 
   protected EnveloperRunner createEnvelopeRunner(Envelope envelope) {
@@ -221,16 +160,11 @@ class ObjectInbox extends AbstractInbox
   }
 
   protected Envelope nextEnvelope(BlockingQueue<Envelope> q) {
-    if (isBusy() || q.isEmpty()) {
+    if (q.isEmpty()) {
       return null;
     }
     Envelope env = q.peek();
     return env;
-  }
-
-  private void log(Object o) {
-    System.err.println(String.format("%s %s %s %s", Instant.now().toString(),
-        Thread.currentThread().getName(), receiver, o.toString()));
   }
 
 }

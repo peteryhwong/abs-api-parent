@@ -1,7 +1,5 @@
 package abs.api;
 
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -20,6 +18,7 @@ class ContextInbox extends AbstractInbox {
    * receiver is represented by this value.
    */
   private static final Object NULL_RECEIVER = new Object();
+  private static final ObjectInbox NULL_RECEIVER_INBOX = new ObjectInbox(NULL_RECEIVER, null);
 
   /**
    * A dedicated that goes through all {@link ObjectInbox} in
@@ -27,19 +26,18 @@ class ContextInbox extends AbstractInbox {
    * if there's any. The {@link #run()} delegates to
    * {@link ObjectInbox#run()}.
    */
-  class InboxSweeperThread extends Thread {
+  static class InboxSweeperThread extends Thread {
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final Collection<ObjectInbox> inboxes;
 
     /**
      * Ctor
      * 
-     * @param inboxes the {@link Collection} of {@link Inbox}'s
-     *        to sweep.
+     * @param sweepRunnable the sweeping task
      */
-    public InboxSweeperThread(Collection<ObjectInbox> inboxes) {
-      super("inbox-sweeper");
-      this.inboxes = inboxes;
+    public InboxSweeperThread(Runnable sweepRunnable) {
+      super(sweepRunnable, "inbox-sweeper");
+      setDaemon(false);
+      start();
     }
 
     @Override
@@ -48,18 +46,24 @@ class ContextInbox extends AbstractInbox {
         return;
       }
       while (running.get()) {
-        execute(inboxes, inboxes.size() > 10000);
+        try {
+          sleep(0, 1);
+          super.run();
+        } catch (Throwable e) {
+        }
       }
     }
 
     @Override
     public void interrupt() {
-      running.getAndSet(true);
+      running.getAndSet(false);
+      super.interrupt();
     }
   }
 
   private final ConcurrentMap<Object, ObjectInbox> inboxes = new ConcurrentHashMap<>();
   private final ExecutorService executor;
+  private final InboxSweeperThread sweeper;
 
   /**
    * Ctor
@@ -68,29 +72,27 @@ class ContextInbox extends AbstractInbox {
    */
   public ContextInbox(ExecutorService executor) {
     this.executor = executor;
-    inboxes.putIfAbsent(NULL_RECEIVER, new ObjectInbox(NULL_RECEIVER, executor));
-    new InboxSweeperThread(this.inboxes.values()).start();
-  }
-
-  protected void execute(Collection<ObjectInbox> inboxes, final boolean parallel) {
-    if (parallel) {
-      inboxes.parallelStream().forEach((Runnable oi) -> executor.submit(oi));
-    } else {
-      inboxes.stream().filter(oi -> !oi.isRunning() && !oi.isBusy()).forEach(oi -> {
-        CompletableFuture.runAsync(oi, executor);
-      });
-    }
+    this.inboxes.putIfAbsent(NULL_RECEIVER, NULL_RECEIVER_INBOX);
+    this.sweeper = new InboxSweeperThread(this::execute);
   }
 
   @Override
   public <V> Future<V> post(Envelope envelope, Object receiver) {
-    inbox(receiver).post(envelope, receiver);
+    ObjectInbox inbox = inbox(receiver);
+    inbox.post(envelope, receiver);
+    executeObjectInbox(inbox);
     return envelope.response();
   }
 
+  @Override
+  public void bind(Context context) {
+    super.bind(context);
+    NULL_RECEIVER_INBOX.bind(context);
+  }
+
   protected ObjectInbox inbox(Object receiver) {
-    if (receiver == null) {
-      return inboxes.get(NULL_RECEIVER);
+    if (receiver == null || receiver == NULL_RECEIVER) {
+      return NULL_RECEIVER_INBOX;
     }
     if (inboxes.containsKey(receiver)) {
       return inboxes.get(receiver);
@@ -99,6 +101,26 @@ class ContextInbox extends AbstractInbox {
     final ObjectInbox oi = inboxes.get(receiver);
     oi.bind(context);
     return oi;
+  }
+
+  protected void execute() {
+    inboxes.values().stream().forEach(this::executeObjectInbox);
+  }
+
+  protected synchronized void executeObjectInbox(ObjectInbox oi) {
+    try {
+      if (oi == NULL_RECEIVER_INBOX) {
+        return;
+      }
+      final boolean busy = oi.isProcessingEnvelope();
+      if (!busy) {
+        executor.submit(oi);
+      }
+    } catch (Throwable e) {
+      if (executor.isShutdown()) {
+        sweeper.interrupt();
+      }
+    }
   }
 
 }

@@ -22,8 +22,8 @@ class AwaitEnvelope extends SimpleEnvelope {
   }
   
   @Override
-  protected ContextResponse createResponse() {
-    return new ContextResponse(true);
+  protected <V> ContextResponse<V> createResponse() {
+    return new ContextResponse<V>(true);
   }
 
 }

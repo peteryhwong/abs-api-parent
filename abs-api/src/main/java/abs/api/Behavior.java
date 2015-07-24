@@ -8,11 +8,6 @@ package abs.api;
  * .
  * 
  * <p>
- * The interface can be used in {@link Actor#ask(Object, Object)}
- * knowing that the receiver of the message is a behavior and can
- * respond to a general message.
- * 
- * <p>
  * A behavior introduces generality of an actor but loses the static
  * type checking of possible arguments of a message.
  * 

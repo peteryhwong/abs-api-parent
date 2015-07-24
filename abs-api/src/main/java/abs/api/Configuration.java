@@ -101,7 +101,7 @@ public interface Configuration {
   /**
    * A simple builder pattern for {@link Configuration}
    */
-  static class ConfigurationBuilder {
+  static final class ConfigurationBuilder {
 
     private ThreadFactory threadFactory = r -> new ContextThread(r);
     private ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);

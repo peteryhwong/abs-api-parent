@@ -69,16 +69,24 @@ public class SimpleEnvelope implements Envelope {
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("Envelope(");
-		sb.append("id: ").append(sequence).append(", ");
-		sb.append("from: ").append(sender).append(", ");
-		sb.append("to: ").append(receiver).append(", ");
-		sb.append("message: ").append(message.getClass().getSimpleName()).append(", ");
-		sb.append("future: ").append(future);
-		return sb.append(")").toString();
+      StringBuilder sb = new StringBuilder("Envelope(");
+      sb.append("id: ").append(sequence).append(", ");
+      sb.append("from: ").append(sender).append(", ");
+      sb.append("to: ").append(receiver).append(", ");
+      sb.append("message: ").append(messageString(message)).append(", ");
+      sb.append("future: ").append(future);
+      return sb.append(")").toString();
 	}
 
     protected <V> Response<V> createResponse() {
       return new ContextResponse<V>();
+    }
+    
+    protected String messageString(Object message) {
+      String simpleName = message.getClass().getSimpleName();
+      if (simpleName.contains("Lambda")) {
+        return simpleName;
+      }
+      return simpleName + "@" + Integer.toHexString(message.hashCode());
     }
 }
