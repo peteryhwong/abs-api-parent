@@ -6,10 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -17,6 +22,8 @@ import org.junit.Test;
  * Tests around "await" API.
  */
 public class AwaitTest {
+
+  private final Random random = new Random(System.currentTimeMillis());
 
   static class Network implements Actor {
     private static final long serialVersionUID = 1L;
@@ -109,6 +116,69 @@ public class AwaitTest {
 
   }
 
+  static class GuardHolder implements Actor {
+    private static final long serialVersionUID = 1L;
+
+    private final AtomicInteger releaseCounter = new AtomicInteger(0);
+    private final AtomicInteger guardCounter = new AtomicInteger(0);
+    public final List<Boolean> guards;
+
+    public GuardHolder(final int size) {
+      this.guards = IntStream.range(0, size).boxed().map(i -> false).collect(Collectors.toList());
+    }
+
+    public synchronized void progress() {
+      if (guardCounter.get() < guards.size()) {
+        if (guards.get(guardCounter.get())) {
+          guardCounter.incrementAndGet();
+          return;
+        }
+        Supplier<Boolean> condition = () -> guards.get(guardCounter.get());
+        await(this, condition);
+        guardCounter.incrementAndGet();
+      }
+    }
+
+    public synchronized void release() {
+      if (releaseCounter.get() < guards.size()) {
+        guards.set(releaseCounter.get(), true);
+        releaseCounter.incrementAndGet();
+      }
+    }
+
+    @Override
+    public String simpleName() {
+      return "guard-holder";
+    }
+
+  }
+
+  public static class ReleaseMsg implements Runnable {
+    private final GuardHolder gh;
+
+    public ReleaseMsg(GuardHolder gh) {
+      this.gh = gh;
+    }
+
+    @Override
+    public void run() {
+      gh.release();
+    }
+  }
+
+  public static class ProgressMsg implements Runnable {
+    private final GuardHolder gh;
+
+    public ProgressMsg(GuardHolder gh) {
+      this.gh = gh;
+    }
+
+    @Override
+    public void run() {
+      gh.progress();
+    }
+  }
+
   @Test
   public void onOpenPutsEnvelopeOnHeadOfSendersAwaitingList() throws Exception {
     ExecutorService executor = Executors.newCachedThreadPool();
@@ -129,8 +199,7 @@ public class AwaitTest {
 
     ObjectInbox oi2 = oi1.senderInbox(o1_e1, context);
     assertThat(oi2.isAwaiting()).isTrue();
-    assertThat(oi2.lastAwaitingEnvelope()).isEqualTo(o1_e1);
-    assertThat(oi2.isBusy()).isFalse();
+    assertThat(oi2.isProcessingEnvelope()).isFalse();
   }
 
   @Test
@@ -154,7 +223,6 @@ public class AwaitTest {
 
     ObjectInbox oi2 = oi1.senderInbox(o1_e1, context);
     assertThat(oi2.isAwaiting()).isFalse();
-    assertThat(oi2.lastAwaitingEnvelope()).isNull();
   }
 
   @Test
@@ -197,10 +265,7 @@ public class AwaitTest {
 
   @Test
   public void relayPacketSequence() throws Exception {
-    ExecutorService executor = Executors.newCachedThreadPool();
-    Configuration configuration =
-        Configuration.newConfiguration().withExecutorService(executor).build();
-    Context context = new LocalContext(configuration);
+    Context context = Configuration.newConfiguration().buildContext();
 
     Network network = new Network();
     context.newActor("network", network);
@@ -208,7 +273,7 @@ public class AwaitTest {
     Gateway gateway = new Gateway(network);
     context.newActor("gateway", gateway);
 
-    final int size = new Random(System.currentTimeMillis()).nextInt(256) + 128;
+    final int size = random.nextInt(256) + 512;
     Callable<List<Long>> msg = () -> gateway.relay(size);
     Response<List<Long>> r = context.await(gateway, msg);
     assertThat(r).isNotNull();
@@ -218,6 +283,43 @@ public class AwaitTest {
     assertThat(tokens).containsNoDuplicates();
     assertThat(tokens).isStrictlyOrdered();
     assertThat(tokens.get(size - 1)).isEqualTo(network.token.get());
+  }
+
+  @Test
+  public void awaitBoolean() throws Exception {
+    ExecutorService E = Executors.newCachedThreadPool();
+    Context context = Configuration.newConfiguration().buildContext();
+    final int size = 16 + random.nextInt(512);
+    GuardHolder gh = new GuardHolder(size);
+    context.newActor(gh.simpleName(), gh);
+
+    List<CompletableFuture<Void>> progresses = new ArrayList<>();
+    Runnable progressMsg = () -> {
+      for (int i = 0; i < size; i++) {
+        Response<Void> r = context.await(gh, new ProgressMsg(gh));
+        progresses.add((CompletableFuture<Void>) r);
+      }
+    };
+
+    List<CompletableFuture<Void>> releases = new ArrayList<>();
+    Runnable releaseMsg = () -> {
+      for (int i = 0; i <= size; i++) {
+        Response<Void> r = context.send(gh, new ReleaseMsg(gh));
+        releases.add((CompletableFuture<Void>) r);
+      }
+    };
+
+    Future<?> release = E.submit(releaseMsg);
+    Future<?> progress = E.submit(progressMsg);
+
+    CompletableFuture.allOf(releases.toArray(new CompletableFuture[0]));
+    CompletableFuture.allOf(progresses.toArray(new CompletableFuture[0]));
+    release.get();
+    progress.get();
+
+    assertThat(release.isDone()).isTrue();
+    assertThat(gh.guards).doesNotContain(false);
+    assertThat(gh.releaseCounter.get()).isEqualTo(gh.guards.size());
   }
 
 }
