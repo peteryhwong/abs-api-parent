@@ -1,5 +1,9 @@
 package abs.api;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.Instant;
+
 /**
  * A system context is an entry-point to an actor context. The default
  * constructor creates a context with default configuration.
@@ -9,6 +13,7 @@ package abs.api;
  */
 public final class SystemContext implements Context, Contextual {
 
+    public static final Instant T0 = ContextClock.T0;
     private static final ThreadInterruptWatchdog THREAD_INTERRUPT_WATCHDOG 
         = new ThreadInterruptWatchdog(ContextThread::shutdown);
 	private static final Object MUTEX = new Object();
@@ -23,8 +28,10 @@ public final class SystemContext implements Context, Contextual {
         THREAD_INTERRUPT_WATCHDOG.interrupt();
       } , "jabs-shutdown"));
       Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+        StringWriter sw = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(sw));
         String msg = "[ERROR] [%s] [%s]";
-        System.err.println(String.format(msg, thread.getName(), throwable.getMessage()));
+        System.err.println(String.format(msg, thread.getName(), sw.toString()));
       });
 	}
 

@@ -1,20 +1,40 @@
 package abs.api;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
+/**
+ * The {@link Clock} used in {@link Timed} and {@link Context}.
+ */
 class ContextClock extends Clock {
-
-  /**
-   * 
-   */
-  public static final Clock CLOCK = new ContextClock();
 
   /**
    * The internal system {@link Clock}
    */
-  private static final Clock SYSTEM_CLOCK = Clock.systemUTC();
+  private static final Clock SYSTEM_CLOCK = Clock.system(ZoneOffset.UTC);
+
+  /**
+   * The {@link Clock} used by {@link Context}
+   */
+  public static final Clock CLOCK = new ContextClock();
+
+  /**
+   * The time of the start of the system
+   */
+  public static final Instant T0 = CLOCK.instant();
+
+  /**
+   * The uptime of the clock of the context
+   * 
+   * @return the duration in which the context has been up and
+   *         running
+   */
+  public static Duration uptime() {
+    return Duration.between(T0, CLOCK.instant());
+  }
 
   private ContextClock() {}
 
