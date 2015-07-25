@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.8.7
+
+* [#14](https://github.com/CrispOSS/abs-api-parent/issues/14) Introduce `await` (Boolean await support)
+* [#16](https://github.com/CrispOSS/abs-api-parent/issues/16) Implement ABS functional layer in ABS API
+
 ## v0.8.6
 
 * [#12](https://github.com/CrispOSS/abs-api-parent/issues/12) Ensure graceful shutdown of threads in the context
