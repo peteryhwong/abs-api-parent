@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.8.8
+
+* [#18](https://github.com/CrispOSS/abs-api-parent/issues/18) Deliver the Maven artifacts compatible with OSGi bundles
+
 ## v0.8.7
 
 * [#14](https://github.com/CrispOSS/abs-api-parent/issues/14) Introduce `await` (Boolean await support)
