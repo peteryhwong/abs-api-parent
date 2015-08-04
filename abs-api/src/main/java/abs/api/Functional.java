@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,6 +75,53 @@ public final class Functional {
 
   }
 
+  /**
+   * An extension over {@link Map.Entry}
+   * 
+   * @param <X>
+   * @param <Y>
+   */
+  public static interface Pair<X, Y> extends Map.Entry<X, Y> {
+
+    /**
+     * An implementation of {@link Pair} using
+     * {@link SimpleEntry}.
+     * 
+     * @param <X>
+     * @param <Y>
+     */
+    static class SimplePair<X, Y> extends AbstractMap.SimpleEntry<X, Y>implements Pair<X, Y> {
+      private static final long serialVersionUID = 1L;
+
+      /**
+       * Ctor.
+       * 
+       * @param key the first element
+       * @param value the second element
+       */
+      public SimplePair(X key, Y value) {
+        super(key, value);
+      }
+    }
+
+    public static <A, B> Pair<A, B> newPair(A a, B b) {
+      return new SimplePair<A, B>(a, b);
+    }
+
+    default X getFirst() {
+      return getKey();
+    }
+
+    default Y getSecond() {
+      return getValue();
+    }
+
+    default void setSecond(Y second) {
+      setValue(second);
+    }
+
+  }
+
   // --- Arithmetic
 
   public static <X> X max(X x, X y) {
@@ -110,6 +158,16 @@ public final class Functional {
 
   // --- List
 
+  /**
+   * Same as {@link #emptyList()}.
+   * 
+   * @return a new empty {@link List}.
+   * @deprecated Use {@link #emptyList()}.
+   */
+  public static <E> List<E> EmptyList() {
+    return emptyList();
+  }
+
   public static <E> List<E> emptyList() {
     return new ArrayList<>();
   }
@@ -118,7 +176,19 @@ public final class Functional {
     return (List<E>) insertCollection(e, list);
   }
 
-  public static <E> List<E> remove(E e, List<E> list) {
+  /**
+   * Same as {@link #insert(Object, List)}
+   * 
+   * @param list the list
+   * @param e the element
+   * @return the updated list
+   * @deprecated Use {@link #insert(Object, List)}
+   */
+  public static <E> List<E> insertElement(List<E> list, E e) {
+    return (List<E>) insertCollection(e, list);
+  }
+
+  public static <E> List<E> remove(List<E> list, E e) {
     return (List<E>) removeCollection(e, list);
   }
 
@@ -143,6 +213,18 @@ public final class Functional {
     return isEmptyCollection(list);
   }
 
+  /**
+   * Same as {@link #isEmpty(List)}
+   * 
+   * @param list the list
+   * @return <code>true</code> if the list is empty; otherwise
+   *         <code>false</code>
+   * @deprecated Use {@link #isEmpty(List)}
+   */
+  public static <E> boolean emptyList(List<E> list) {
+    return isEmptyCollection(list);
+  }
+
   public static <E> E get(List<E> list, int index) {
     if (index >= size(list)) {
       throw new IllegalArgumentException("Index is beyond list size: " + index);
@@ -151,7 +233,7 @@ public final class Functional {
   }
 
   public static <E> List<E> without(E e, List<E> list) {
-    return remove(e, list);
+    return remove(list, e);
   }
 
   public static <E> List<E> concatenate(List<E> list1, List<E> list2) {
@@ -175,7 +257,43 @@ public final class Functional {
     return IntStream.range(0, n).mapToObj(i -> value).collect(Collectors.toList());
   }
 
+  public static <E> List<E> tail(List<E> list) {
+    if (list == null || list.isEmpty()) {
+      return emptyList();
+    }
+    return list.subList(1, list.size());
+  }
+
+  public static <E> E head(List<E> list) {
+    if (list == null || list.isEmpty()) {
+      return null;
+    }
+    return list.get(0);
+  }
+
+  /**
+   * Same as {@link #insert(Object, List)}.
+   * 
+   * @param e the element
+   * @param list the list
+   * @return the updated list
+   * @deprecated Please {@link #insert(Object, List)}.
+   */
+  public static <E> List<E> Cons(E e, List<E> list) {
+    return insert(e, list);
+  }
+
   // --- Set
+
+  /**
+   * Same as {@link #emptySet()}.
+   * 
+   * @return a new empty {@link Set}
+   * @deprecated Use {@link #EmptySet()}.
+   */
+  public static <E> Set<E> EmptySet() {
+    return new HashSet<>();
+  }
 
   public static <E> Set<E> emptySet() {
     return new HashSet<>();
@@ -185,7 +303,19 @@ public final class Functional {
     return (Set<E>) insertCollection(e, set);
   }
 
-  public static <E> Set<E> remove(E e, Set<E> set) {
+  /**
+   * Same as {@link #insert(Object, Set)}
+   * 
+   * @param set the set
+   * @param e the element
+   * @return the updated set
+   * @deprecated Use {@link #insert(Object, Set)}
+   */
+  public static <E> Set<E> insertElement(Set<E> set, E e) {
+    return (Set<E>) insertCollection(e, set);
+  }
+
+  public static <E> Set<E> remove(Set<E> set, E e) {
     return (Set<E>) removeCollection(e, set);
   }
 
@@ -202,6 +332,18 @@ public final class Functional {
   }
 
   public static <E> boolean isEmpty(Set<E> set) {
+    return isEmptyCollection(set);
+  }
+
+  /**
+   * Same as {@link #isEmpty(Set)}
+   * 
+   * @param set the set
+   * @return <code>true</code> if the set is empty; otherwise
+   *         <code>false</code>
+   * @deprecated Use {@link #isEmpty(Set)}
+   */
+  public static <E> boolean emptySet(Set<E> set) {
     return isEmptyCollection(set);
   }
 
@@ -236,16 +378,69 @@ public final class Functional {
 
   // --- Map
 
+  /**
+   * Same as {@link #emptyMap()}
+   * 
+   * @return a new empty {@link Map}
+   * @deprecated Use {@link #emptyMap()}.
+   */
+  public static <K, V> Map<K, V> EmptyMap() {
+    return new ConcurrentHashMap<>();
+  }
+
   public static <K, V> Map<K, V> emptyMap() {
     return new ConcurrentHashMap<>();
   }
 
-  public static <K, V> Map<K, V> insert(K key, V value, Map<K, V> map) {
+  public static <K, V> Map<K, V> insert(Map<K, V> map, K key, V value) {
     if (map == null) {
       map = emptyMap();
     }
     map.put(key, value);
     return map;
+  }
+
+  public static <K, V> Map<K, V> insert(Entry<K, V> pair, Map<K, V> map) {
+    return insert(map, pair.getKey(), pair.getValue());
+  }
+
+  public static <K, V> Map<K, V> put(Map<K, V> map, K key, V value) {
+    return insert(map, key, value);
+  }
+
+  /**
+   * Creates a new {@link Pair}.
+   * 
+   * @param key the first element
+   * @param value the second element
+   * @return an instance of {@link Pair}
+   * @deprecated Try to use {@link #pair(Object, Object)} which
+   *             uses standard Java's {@link Entry}.
+   */
+  public static <K, V> Pair<K, V> Pair(K key, V value) {
+    return Pair.newPair(key, value);
+  }
+
+  /**
+   * Returns the first element in a {@link Pair}.
+   * 
+   * @param pair the pair instance
+   * @return the first element
+   * @deprecated Usage is not recommended.
+   */
+  public static <K, V> K fst(Entry<K, V> pair) {
+    return pair.getKey();
+  }
+
+  /**
+   * Retrieves the second element in a {@link Pair}.
+   * 
+   * @param pair the pair instance
+   * @return the second element
+   * @deprecated Usage is not recommended.
+   */
+  public static <K, V> V snd(Entry<K, V> pair) {
+    return pair.getValue();
   }
 
   public static <K, V> Map.Entry<K, V> pair(K key, V value) {
@@ -272,24 +467,24 @@ public final class Functional {
     return map;
   }
 
-  public static <K, V> Collection<K> keys(Map<K, V> map) {
-    return map.keySet();
+  public static <K, V, C extends Collection<K>> C keys(Map<K, V> map) {
+    return (C) map.keySet();
   }
 
   public static <K, V> Collection<V> values(Map<K, V> map) {
     return map.values();
   }
 
-  public static <K, V> Optional<V> lookup(K key, Map<K, V> map) {
+  public static <K, V> Optional<V> lookup(Map<K, V> map, K key) {
     return Optional.ofNullable(map.get(key));
   }
 
-  public static <K, V> V lookupDefault(K key, V defaultValue, Map<K, V> map) {
-    return lookup(key, map).orElse(defaultValue);
+  public static <K, V> V lookupDefault(Map<K, V> map, K key, V defaultValue) {
+    return lookup(map, key).orElse(defaultValue);
   }
 
-  public static <K, V> Map<K, V> insert(Entry<K, V> pair, Map<K, V> map) {
-    return insert(pair.getKey(), pair.getValue(), map);
+  public static <K, V> V lookupUnsafe(Map<K, V> map, K key) {
+    return lookup(map, key).orElse(null);
   }
 
   // --- Strings
