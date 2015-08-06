@@ -61,8 +61,20 @@ public final class Functional {
       return of(x -> x == null, what);
     }
 
+    static <X, Y> Match<X, Y> equals(X x, Y y) {
+      Predicate<X> cond = input -> Objects.equals(x, input);
+      Function<X, Y> what = ignored -> y;
+      return of(cond, what);
+    }
+
     default Match<X, Y> orDefault(Function<X, Y> what) {
       return or(ignored -> true, what);
+    }
+
+    default Match<X, Y> orEquals(X x, Y y) {
+      Predicate<X> cond = input -> Objects.equals(x, input);
+      Function<X, Y> what = ignored -> y;
+      return or(cond, what);
     }
 
     default Match<X, Y> or(Predicate<X> cond, Function<X, Y> what) {
