@@ -244,7 +244,7 @@ public final class Functional {
     return list.get(index);
   }
 
-  public static <E> List<E> without(E e, List<E> list) {
+  public static <E> List<E> without(List<E> list, E e) {
     return remove(list, e);
   }
 
@@ -255,7 +255,7 @@ public final class Functional {
     return result;
   }
 
-  public static <E> List<E> appendRight(E e, List<E> list) {
+  public static <E> List<E> appendRight(List<E> list, E e) {
     list.add(e);
     return list;
   }
