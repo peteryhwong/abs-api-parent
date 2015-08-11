@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +31,9 @@ import java.util.stream.IntStream;
  */
 public final class Functional {
 
+  private static final String ANSI_RESET = "\u001B[0m";
+  private static final String ANSI_GREEN = "\u001B[32m";
+  private static final String ANSI_RED = "\u001B[31m";
   private static final Random RANDOM = new Random(Clock.systemUTC().millis());
 
   /**
@@ -138,11 +142,11 @@ public final class Functional {
 
   public static <X> X max(X x, X y) {
     if (x instanceof Comparable == false) {
-      return null;
+      return Objects.equals(x, y) ? x : null;
     }
     Comparable<X> cx = (Comparable<X>) x;
     final int c = cx.compareTo(y);
-    return c == 0 || c > 1 ? x : y;
+    return c >= 0 ? x : y;
   }
 
   public static <X> X min(X x, X y) {
@@ -156,15 +160,15 @@ public final class Functional {
 
   // --- Logical
 
-  public static boolean and(boolean a, boolean b) {
+  public static boolean and(final boolean a, final boolean b) {
     return a && b;
   }
 
-  public static boolean not(boolean a) {
+  public static boolean not(final boolean a) {
     return !a;
   }
 
-  public static boolean or(boolean a, boolean b) {
+  public static boolean or(final boolean a, final boolean b) {
     return a || b;
   }
 
@@ -181,10 +185,13 @@ public final class Functional {
   }
 
   public static <E> List<E> emptyList() {
-    return new ArrayList<>();
+    return new LinkedList<>();
   }
 
   public static <E> List<E> insert(E e, List<E> list) {
+    if (list == null) {
+      list = emptyList();
+    }
     return (List<E>) insertCollection(e, list);
   }
 
@@ -239,7 +246,7 @@ public final class Functional {
 
   public static <E> E get(List<E> list, int index) {
     if (index >= size(list)) {
-      throw new IllegalArgumentException("Index is beyond list size: " + index);
+      throw new IllegalArgumentException("Index out of bound: " + index);
     }
     return list.get(index);
   }
@@ -256,8 +263,7 @@ public final class Functional {
   }
 
   public static <E> List<E> appendRight(List<E> list, E e) {
-    list.add(e);
-    return list;
+    return (List<E>) insertCollection(e, list);
   }
 
   public static <E> List<E> reverse(List<E> list) {
@@ -304,7 +310,7 @@ public final class Functional {
    * @deprecated Use {@link #EmptySet()}.
    */
   public static <E> Set<E> EmptySet() {
-    return new HashSet<>();
+    return emptySet();
   }
 
   public static <E> Set<E> emptySet() {
@@ -312,6 +318,9 @@ public final class Functional {
   }
 
   public static <E> Set<E> insert(E e, Set<E> set) {
+    if (set == null) {
+      set = emptySet();
+    }
     return (Set<E>) insertCollection(e, set);
   }
 
@@ -397,7 +406,7 @@ public final class Functional {
    * @deprecated Use {@link #emptyMap()}.
    */
   public static <K, V> Map<K, V> EmptyMap() {
-    return new ConcurrentHashMap<>();
+    return emptyMap();
   }
 
   public static <K, V> Map<K, V> emptyMap() {
@@ -509,8 +518,8 @@ public final class Functional {
     return s.length();
   }
 
-  public static <X> String toString(X x) {
-    return Objects.toString(x, "null");
+  public static String toString(Object o) {
+    return Objects.toString(o, "null");
   }
 
   // --- I/O
@@ -525,6 +534,21 @@ public final class Functional {
 
   public static void print(Object o) {
     System.out.print(o);
+  }
+
+  /**
+   * Print a boolean with ANSI color support. This is a specific
+   * method with <code>GREEN</code> and <code>RED</code> color
+   * support on ANSI terminal. Use with caution.
+   * 
+   * @param bool the value
+   */
+  public static void println(final boolean bool) {
+    if (bool) {
+      println("%sTRUE%s", ANSI_GREEN, ANSI_RESET);
+    } else {
+      println("%sFALSE%s", ANSI_RED, ANSI_RESET);
+    }
   }
 
   public static String readln() {
