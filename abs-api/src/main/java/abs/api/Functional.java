@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -184,6 +185,10 @@ public final class Functional {
     return emptyList();
   }
 
+  public static <E> List<E> Nil() {
+    return emptyList();
+  }
+
   public static <E> List<E> emptyList() {
     return new LinkedList<>();
   }
@@ -220,12 +225,26 @@ public final class Functional {
     return list;
   }
 
+  public static <E> List<E> list(E... args) {
+    if (args == null || args.length == 0) {
+      return emptyList();
+    }
+    List<E> asList = Arrays.asList(args);
+    List<E> result = emptyList();
+    result.addAll(asList);
+    return result;
+  }
+
   public static <E> boolean contains(List<E> list, E e) {
     return containsCollection(e, list);
   }
 
   public static <E> int size(List<E> list) {
     return sizeCollection(list);
+  }
+
+  public static <E> int length(List<E> list) {
+    return size(list);
   }
 
   public static <E> boolean isEmpty(List<E> list) {
@@ -350,6 +369,10 @@ public final class Functional {
 
   public static <E> int size(Set<E> set) {
     return sizeCollection(set);
+  }
+
+  public static <E> int length(Set<E> set) {
+    return size(set);
   }
 
   public static <E> boolean isEmpty(Set<E> set) {
@@ -522,6 +545,10 @@ public final class Functional {
     return Objects.toString(o, "null");
   }
 
+  public static String concatenate(String s1, String s2) {
+    return new StringBuilder().append(s1).append(s2).toString();
+  }
+
   // --- I/O
 
   public static void println(String format, Object... args) {
@@ -634,7 +661,7 @@ public final class Functional {
   }
 
   protected static <E> int sizeCollection(Collection<E> col) {
-    return col.size();
+    return col == null ? 0 : col.size();
   }
 
   protected static <E> boolean isEmptyCollection(Collection<E> col) {
