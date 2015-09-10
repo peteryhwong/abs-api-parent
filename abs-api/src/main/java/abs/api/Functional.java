@@ -300,7 +300,7 @@ public final class Functional {
 
   public static <E> List<E> tail(List<E> list) {
     if (list == null || list.isEmpty()) {
-      return emptyList();
+      return null;
     }
     return list.subList(1, list.size());
   }
