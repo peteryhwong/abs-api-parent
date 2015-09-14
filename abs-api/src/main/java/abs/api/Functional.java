@@ -107,7 +107,7 @@ public final class Functional {
      * @param <X>
      * @param <Y>
      */
-    static class SimplePair<X, Y> extends AbstractMap.SimpleEntry<X, Y>implements Pair<X, Y> {
+    static class SimplePair<X, Y> extends AbstractMap.SimpleEntry<X, Y> implements Pair<X, Y> {
       private static final long serialVersionUID = 1L;
 
       /**
@@ -138,6 +138,10 @@ public final class Functional {
     }
 
   }
+
+  // -- Pair Constructor
+
+
 
   // --- Arithmetic
 
@@ -296,7 +300,7 @@ public final class Functional {
 
   public static <E> List<E> tail(List<E> list) {
     if (list == null || list.isEmpty()) {
-      return emptyList();
+      return null;
     }
     return list.subList(1, list.size());
   }
@@ -432,6 +436,7 @@ public final class Functional {
     return emptyMap();
   }
 
+
   public static <K, V> Map<K, V> emptyMap() {
     return new ConcurrentHashMap<>();
   }
@@ -442,6 +447,10 @@ public final class Functional {
     }
     map.put(key, value);
     return map;
+  }
+
+  public static <K, V> Map<K, V> insert(Map<K, V> map, Pair<K, V> pair) {
+    return insert(pair, map);
   }
 
   public static <K, V> Map<K, V> insert(Entry<K, V> pair, Map<K, V> map) {
@@ -506,7 +515,7 @@ public final class Functional {
         Collectors.toConcurrentMap((Entry<K, V> e) -> e.getKey(), (Entry<K, V> e) -> e.getValue()));
   }
 
-  public static <K, V> Map<K, V> removeKey(K key, Map<K, V> map) {
+  public static <K, V> Map<K, V> removeKey(Map<K, V> map, K key) {
     map.remove(key);
     return map;
   }
@@ -529,6 +538,10 @@ public final class Functional {
 
   public static <K, V> V lookupUnsafe(Map<K, V> map, K key) {
     return lookup(map, key).orElse(null);
+  }
+
+  public static <V> V fromJust(Optional<V> value) {
+    return value.orElse(null);
   }
 
   // --- Strings

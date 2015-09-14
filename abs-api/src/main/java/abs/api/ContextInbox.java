@@ -112,10 +112,7 @@ class ContextInbox extends AbstractInbox {
       if (oi == NULL_RECEIVER_INBOX) {
         return;
       }
-      final boolean busy = oi.isProcessingEnvelope();
-      if (!busy) {
-        executor.submit(oi);
-      }
+      executor.submit(oi);
     } catch (Throwable e) {
       if (executor.isShutdown()) {
         sweeper.interrupt();

@@ -1,10 +1,13 @@
 package abs.api;
 
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,8 +43,8 @@ class ObjectInbox extends AbstractInbox
   private final BlockingQueue<Envelope> unprocessed =
       new PriorityBlockingQueue<>(512, ENVELOPE_COMPARATOR);
 
-  private boolean awaiting = false;
-  private AtomicReference<Envelope> processing = new AtomicReference<Envelope>(null);
+  private AtomicBoolean awaiting = new AtomicBoolean(false);
+  private Deque<Envelope> processing = new ConcurrentLinkedDeque<>();
 
   /**
    * Ctor
@@ -77,14 +80,18 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public Envelope get() {
-    if (processing.get() != null) {
-      return null;
-    }
     final Envelope envelope = nextEnvelope(unprocessed);
     if (envelope == null) {
       return null;
     }
-    processing.compareAndSet(null, envelope);
+    if (envelope.isSelfEnvelope()) {
+      processing.push(envelope);
+      return envelope;
+    }
+    if (isProcessingEnvelope()) {
+      return null;
+    }
+    processing.push(envelope);
     return envelope;
   }
 
@@ -98,7 +105,7 @@ class ObjectInbox extends AbstractInbox
 
   @Override
   public void onComplete(Envelope envelope, Context context) {
-    this.processing.getAndSet(null);
+    this.processing.remove(envelope);
     if (envelope instanceof AwaitEnvelope) {
       notifyEndAwait(envelope, context);
     }
@@ -113,20 +120,19 @@ class ObjectInbox extends AbstractInbox
   }
 
   protected void onAwaitStart(Envelope envelope, Context context) {
-    this.awaiting = true;
-    this.processing.getAndSet(null);
+    this.awaiting.getAndSet(true);
   }
 
   protected void onAwaitEnd(Envelope envelope, Context context) {
-    this.awaiting = false;
+    this.awaiting.getAndSet(false);
   }
 
   protected boolean isProcessingEnvelope() {
-    return processing.get() != null;
+    return processing.stream().anyMatch(this::isWorkEnvelope);
   }
 
   protected boolean isAwaiting() {
-    return awaiting;
+    return awaiting.get();
   }
 
   protected EnveloperRunner createEnvelopeRunner(Envelope envelope) {
@@ -165,6 +171,17 @@ class ObjectInbox extends AbstractInbox
     }
     Envelope env = q.peek();
     return env;
+  }
+
+  private boolean isWorkEnvelope(Envelope e) {
+    // Any envelope that is not an await or a message to self
+    if (e instanceof AwaitEnvelope) {
+      return false;
+    }
+    if (e.isSelfEnvelope()) {
+      return false;
+    }
+    return true;
   }
 
 }

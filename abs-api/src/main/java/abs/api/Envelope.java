@@ -1,5 +1,7 @@
 package abs.api;
 
+import java.util.Objects;
+
 /**
  * An abstraction to represent a message composing of a sender
  * reference, a recipient reference, the message, the eventual
@@ -48,5 +50,16 @@ public interface Envelope {
    * @return the unique sequence of this envelope
    */
   long sequence();
+
+  /**
+   * Checks if this is a message from an actor to itself.
+   * 
+   * @return <code>true</code> if {@link #to()} and
+   *         {@link #from()} at the same; otherwise
+   *         <code>false</code>.
+   */
+  default boolean isSelfEnvelope() {
+    return Objects.equals(from(), to());
+  }
 
 }
