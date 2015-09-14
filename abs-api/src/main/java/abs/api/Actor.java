@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * @author Behrooz Nobakht
  * @since 1.0
  */
-public interface Actor extends Reference, Comparable<Reference> {
+public interface Actor extends Reference {
 
 
   /**
@@ -68,7 +68,7 @@ public interface Actor extends Reference, Comparable<Reference> {
 				return false;
 			}
 			return name.equals(((Reference) obj).name());
-		};
+		}
 
 		@Override
 		public String toString() {
@@ -206,12 +206,12 @@ public interface Actor extends Reference, Comparable<Reference> {
     default Response<Boolean> await(Object to, Supplier<Boolean> condition) {
       final Predicate<Supplier<Boolean>> predicate = supplier -> {
         Boolean currentValue = supplier.get();
-        if (currentValue != null && currentValue) {
+        if (currentValue != null && currentValue.booleanValue()) {
           return true;
         }
-        return await(to, condition).getValue();
+        return await(to, condition).getValue().booleanValue();
       };
-      final Callable<Boolean> message = () -> predicate.test(condition);
+      final Callable<Boolean> message = () -> Boolean.valueOf(predicate.test(condition));
       final Reference from = self();
       final Reference toRef = reference(to);
       final Envelope envelope = new AwaitEnvelope(from, toRef, message);

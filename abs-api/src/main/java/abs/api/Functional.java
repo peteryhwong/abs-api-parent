@@ -497,7 +497,7 @@ public final class Functional {
           "Keys and values do not match for map construction: " + keys + " -> " + values);
     }
     ConcurrentMap<K, V> map = IntStream.range(0, keys.size()).boxed()
-        .collect(Collectors.toConcurrentMap(index -> keys.get(index), index -> values.get(index)));
+        .collect(Collectors.toConcurrentMap(index -> keys.get(index.intValue()), index -> values.get(index.intValue())));
     return map;
   }
 
