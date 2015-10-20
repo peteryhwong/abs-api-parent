@@ -78,9 +78,19 @@ class ContextInbox extends AbstractInbox {
 
   @Override
   public <V> Future<V> post(Envelope envelope, Object receiver) {
+    // queue the message to receiver
     ObjectInbox inbox = inbox(receiver);
     inbox.post(envelope, receiver);
     executeObjectInbox(inbox);
+
+    // if an await message, free the sender
+    if (envelope instanceof AwaitEnvelope) {
+      Object sender = context.object(envelope.from());
+      ObjectInbox senderInbox = inbox(sender);
+      senderInbox.onAwaitStart(envelope, context);
+      executeObjectInbox(senderInbox);
+    }
+
     return envelope.response();
   }
 
