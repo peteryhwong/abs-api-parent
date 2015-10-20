@@ -4,10 +4,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import abs.api.ContextInbox.InboxSweeperThread;
 import abs.api.LoggingRouter.LoggingThread;
+import net.openhft.affinity.Affinity;
 
 /**
  * A specialized {@link Thread} for {@link Context} that
@@ -40,15 +42,24 @@ public final class ContextThread extends Thread {
     }
   }
 
-  private static final AtomicLong COUNTER = new AtomicLong(0);
+  private static final int CPUS = Runtime.getRuntime().availableProcessors();
+  private static final AtomicLong COUNTER = new AtomicLong(1);
+  private static final AtomicInteger CPU_AFFINITY = new AtomicInteger(0);
 
   /**
    * Ctor
    * 
    * @param target the {@link Runnable} instance
+   * @param enableThreadManagement
    */
-  public ContextThread(Runnable target) {
+  public ContextThread(Runnable target, boolean enableThreadManagement) {
     super(target, createThreadName());
+    if (enableThreadManagement) {
+      int cpu = CPU_AFFINITY.get();
+      Affinity.setAffinity(cpu);
+      CPU_AFFINITY.getAndSet((cpu + 1) % CPUS);
+    }
+    setDaemon(false);
   }
 
   /**

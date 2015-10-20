@@ -18,6 +18,7 @@ class SimpleConfiguration implements Configuration {
   private final boolean isLoggingEnabled;
   private final String logPath;
   private final boolean isRemoteMessagingEnabled;
+  private final boolean isThreadManagementEnabled;
 
   /**
    * Ctor.
@@ -31,11 +32,12 @@ class SimpleConfiguration implements Configuration {
    * @param isLoggingEnabled
    * @param logPath
    * @param isRemoteMessagingEnabled
+   * @param isThreadManagementEnabled
    */
   public SimpleConfiguration(Router envelopeRouter, Opener envelopeOpener, Inbox inbox,
       ReferenceFactory referenceFactory, ExecutorService executorService,
       ThreadFactory threadFactory, final boolean isLoggingEnabled, String logPath,
-      final boolean isRemoteMessagingEnabled) {
+      final boolean isRemoteMessagingEnabled, boolean isThreadManagementEnabled) {
     this.envelopeRouter = envelopeRouter;
     this.envelopeOpener = envelopeOpener;
     this.inbox = inbox;
@@ -45,6 +47,7 @@ class SimpleConfiguration implements Configuration {
     this.isLoggingEnabled = isLoggingEnabled;
     this.logPath = logPath;
     this.isRemoteMessagingEnabled = isRemoteMessagingEnabled;
+    this.isThreadManagementEnabled = isThreadManagementEnabled;
   }
 
   @Override
@@ -90,6 +93,11 @@ class SimpleConfiguration implements Configuration {
   @Override
   public boolean isRemoteMessagingEnabled() {
     return isRemoteMessagingEnabled;
+  }
+
+  @Override
+  public boolean isThreadManagementEnabled() {
+    return isThreadManagementEnabled;
   }
 
 }

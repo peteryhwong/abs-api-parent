@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.openhft.affinity.Affinity;
+
 /**
  * An {@link Inbox} implementation and manages all the
  * {@link ObjectInbox} inside one {@link LocalContext}.
@@ -36,6 +38,7 @@ class ContextInbox extends AbstractInbox {
      */
     public InboxSweeperThread(Runnable sweepRunnable) {
       super(sweepRunnable, "inbox-sweeper");
+      Affinity.setAffinity(0);
       setDaemon(false);
       start();
     }
