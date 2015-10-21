@@ -17,6 +17,8 @@ import java.util.concurrent.ThreadFactory;
  */
 public interface Configuration {
 
+  String PROPERTY_THREAD_MANAGEMENT = "jabs.enableThreadManagement";
+
   /**
    * Provides the router of the context.
    *

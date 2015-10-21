@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadFactory;
 public final class ConfigurationBuilder {
 
   private boolean isThreadManagementEnabled =
-      Boolean.parseBoolean(System.getProperty("jabs.enableThreadManagement", "true"));
+      Boolean.parseBoolean(System.getProperty(Configuration.PROPERTY_THREAD_MANAGEMENT, "true"));
   private ThreadFactory threadFactory;
   private ExecutorService executorService;
   private Router envelopeRouter = new LocalRouter();

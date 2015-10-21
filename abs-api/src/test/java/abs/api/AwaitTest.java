@@ -23,6 +23,10 @@ import org.junit.Test;
  */
 public class AwaitTest {
 
+  static {
+    System.setProperty(Configuration.PROPERTY_THREAD_MANAGEMENT, "false");
+  }
+
   private final Random random = new Random(System.currentTimeMillis());
 
   static class Network implements Actor {
@@ -31,8 +35,6 @@ public class AwaitTest {
     private final AtomicLong token = new AtomicLong(0);
 
     public Long newToken() {
-//      System.out.println(
-//          String.format("%s %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
       Long t = token.incrementAndGet();
       return t;
     }
@@ -99,7 +101,7 @@ public class AwaitTest {
         Response<Long> r = result.get(i);
         // System.out.println("Waiting= " + r);
         Long t = r.getValue();
-//        System.out.println("t=" + t);
+        // System.out.println("t=" + t);
         assertThat(t).isNotNull();
         tokens.add(t);
       }
@@ -197,7 +199,7 @@ public class AwaitTest {
     ObjectInbox oi1 = new ObjectInbox(o1, executor);
     Callable<Long> message = () -> o1.newToken();
     Envelope o1_e1 = new AwaitEnvelope(o2a, o1a, message);
-    
+
     ObjectInbox oi2 = oi1.senderInbox(o1_e1, context);
     oi2.onAwaitStart(o1_e1, context);
 
