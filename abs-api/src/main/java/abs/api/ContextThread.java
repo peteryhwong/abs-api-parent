@@ -44,17 +44,17 @@ public final class ContextThread extends Thread {
 
   private static final int CPUS = Runtime.getRuntime().availableProcessors();
   private static final AtomicLong COUNTER = new AtomicLong(1);
-  private static final AtomicInteger CPU_AFFINITY = new AtomicInteger(0);
+  private static final AtomicInteger CPU_AFFINITY = new AtomicInteger(1);
 
   /**
    * Ctor
    * 
    * @param target the {@link Runnable} instance
-   * @param enableThreadManagement
+   * @param isThreadManagementEnabled
    */
-  public ContextThread(Runnable target, boolean enableThreadManagement) {
+  public ContextThread(Runnable target, boolean isThreadManagementEnabled) {
     super(target, createThreadName());
-    if (enableThreadManagement) {
+    if (isThreadManagementEnabled) {
       int cpu = CPU_AFFINITY.get();
       Affinity.setAffinity(cpu);
       CPU_AFFINITY.getAndSet((cpu + 1) % CPUS);

@@ -35,10 +35,13 @@ class ContextInbox extends AbstractInbox {
      * Ctor
      * 
      * @param sweepRunnable the sweeping task
+     * @param isThreadManagementEnabled
      */
-    public InboxSweeperThread(Runnable sweepRunnable) {
+    public InboxSweeperThread(Runnable sweepRunnable, boolean isThreadManagementEnabled) {
       super(sweepRunnable, "inbox-sweeper");
-      Affinity.setAffinity(0);
+      if (isThreadManagementEnabled) {
+        Affinity.setAffinity(0);
+      }
       setDaemon(false);
       start();
     }
@@ -72,11 +75,12 @@ class ContextInbox extends AbstractInbox {
    * Ctor
    * 
    * @param executor the {@link ExecutorService}
+   * @param isThreadManagementEnabled
    */
-  public ContextInbox(ExecutorService executor) {
+  public ContextInbox(ExecutorService executor, boolean isThreadManagementEnabled) {
     this.executor = executor;
     this.inboxes.putIfAbsent(NULL_RECEIVER, NULL_RECEIVER_INBOX);
-    this.sweeper = new InboxSweeperThread(this::execute);
+    this.sweeper = new InboxSweeperThread(this::execute, isThreadManagementEnabled);
   }
 
   @Override

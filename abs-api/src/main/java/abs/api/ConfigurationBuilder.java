@@ -9,12 +9,13 @@ import java.util.concurrent.ThreadFactory;
  */
 public final class ConfigurationBuilder {
 
-  private boolean isThreadManagementEnabled = true;
-  private ThreadFactory threadFactory = r -> new ContextThread(r, isThreadManagementEnabled);
-  private ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
+  private boolean isThreadManagementEnabled =
+      Boolean.parseBoolean(System.getProperty("jabs.enableThreadManagement", "true"));
+  private ThreadFactory threadFactory;
+  private ExecutorService executorService;
   private Router envelopeRouter = new LocalRouter();
   private Opener envelopeOpener = new DefaultOpener();
-  private Inbox inbox = new ContextInbox(executorService);
+  private Inbox inbox;
   private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
   private boolean isLoggingEnabled = false;
   private String logPath = LoggingRouter.DEFAULT_LOG_PATH;
@@ -74,6 +75,13 @@ public final class ConfigurationBuilder {
   }
 
   public final Configuration build() {
+    if (threadFactory == null) {
+      threadFactory = r -> new ContextThread(r, isThreadManagementEnabled);
+      executorService = Executors.newCachedThreadPool(threadFactory);
+    }
+    if (inbox == null) {
+      inbox = new ContextInbox(executorService, isThreadManagementEnabled);
+    }
     return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, referenceFactory,
         executorService, threadFactory, isLoggingEnabled, logPath, isRemoteEnabled,
         isThreadManagementEnabled);
