@@ -46,7 +46,16 @@ public class LocalNotary implements Notary {
 	/** {@inheritDoc} */
 	@Override
 	public Reference get(Object object) {
-		return ids.get(object);
+	    Reference ref = ids.get(object);
+	    if (ref != null) {
+	      return ref;
+	    }
+	    if (object instanceof Reference) {
+	      Reference refObject = (Reference) object;
+          ref = identify(refObject);
+	      return ref != null ? ref : refObject;
+	    }
+	    return null;
 	}
 
 	@Override

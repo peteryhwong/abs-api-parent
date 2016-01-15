@@ -17,7 +17,24 @@ import java.util.concurrent.ThreadFactory;
  */
 public interface Configuration {
 
-  String PROPERTY_THREAD_MANAGEMENT = "jabs.enableThreadManagement";
+  /**
+   * The prefix to all {@link System} or environment
+   * configurations passed into the library.
+   */
+  String PROPERTY_PREFIX = "jabs.";
+
+  /**
+   * Enables debug mode in the library.
+   */
+  String PROPERTY_DEBUG = PROPERTY_PREFIX + "debug";
+
+  /**
+   * If enabled, the context switch of JVM threads over
+   * different processing cores/unit will be lowered as much as
+   * possible. <b>NOTE</b> that this feature is only available
+   * on UNIX platforms.
+   */
+  String PROPERTY_THREAD_MANAGEMENT = PROPERTY_PREFIX + "enableThreadManagement";
 
   /**
    * Provides the router of the context.

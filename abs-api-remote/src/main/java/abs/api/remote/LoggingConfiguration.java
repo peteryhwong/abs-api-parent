@@ -3,6 +3,7 @@ package abs.api.remote;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import abs.api.Configuration;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -18,7 +19,7 @@ public final class LoggingConfiguration {
 
 	static {
 
-		final Boolean enableDebugMode = Boolean.getBoolean("abs.debug");
+		final Boolean enableDebugMode = Boolean.getBoolean(Configuration.PROPERTY_DEBUG);
 
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();

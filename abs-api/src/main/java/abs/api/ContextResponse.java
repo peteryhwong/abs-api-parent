@@ -13,7 +13,7 @@ import java.util.concurrent.TimeoutException;
  * @author Behrooz Nobakht
  * @since 1.0
  */
-class ContextResponse<V> extends CompletableFuture<V>implements Response<V> {
+class ContextResponse<V> extends CompletableFuture<V> implements Response<V> {
 
   private final boolean await;
 
