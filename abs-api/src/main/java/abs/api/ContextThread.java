@@ -69,8 +69,6 @@ public final class ContextThread extends Thread {
   public void run() {
     try {
       super.run();
-    } catch (Throwable e) {
-      // Ignore
     } finally {
       yield();
     }

@@ -36,21 +36,21 @@ public class SimpleEnvelope implements Envelope {
 		this.sequence = SEQUENCER.get();
 	}
 
-  /** {@inheritDoc} */
+    /** {@inheritDoc} */
 	@Override
-	public Reference from() {
+	public final Reference from() {
 		return sender;
 	}
 
 	/** {@inheritDoc} */
 	@Override
-	public Reference to() {
+	public final Reference to() {
 		return receiver;
 	}
 
 	/** {@inheritDoc} */
 	@Override
-	public Object message() {
+	public final Object message() {
 		return message;
 	}
 
