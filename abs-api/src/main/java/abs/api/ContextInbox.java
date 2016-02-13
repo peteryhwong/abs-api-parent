@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.openhft.affinity.Affinity;
+
 /**
  * An {@link Inbox} implementation and manages all the
  * {@link ObjectInbox} inside one {@link LocalContext}.
@@ -33,9 +35,13 @@ class ContextInbox extends AbstractInbox {
      * Ctor
      * 
      * @param sweepRunnable the sweeping task
+     * @param isThreadManagementEnabled
      */
-    public InboxSweeperThread(Runnable sweepRunnable) {
+    public InboxSweeperThread(Runnable sweepRunnable, boolean isThreadManagementEnabled) {
       super(sweepRunnable, "inbox-sweeper");
+      if (isThreadManagementEnabled) {
+        Affinity.setAffinity(0);
+      }
       setDaemon(false);
       start();
     }
@@ -69,18 +75,29 @@ class ContextInbox extends AbstractInbox {
    * Ctor
    * 
    * @param executor the {@link ExecutorService}
+   * @param isThreadManagementEnabled
    */
-  public ContextInbox(ExecutorService executor) {
+  public ContextInbox(ExecutorService executor, boolean isThreadManagementEnabled) {
     this.executor = executor;
     this.inboxes.putIfAbsent(NULL_RECEIVER, NULL_RECEIVER_INBOX);
-    this.sweeper = new InboxSweeperThread(this::execute);
+    this.sweeper = new InboxSweeperThread(this::execute, isThreadManagementEnabled);
   }
 
   @Override
   public <V> Future<V> post(Envelope envelope, Object receiver) {
+    // queue the message to receiver
     ObjectInbox inbox = inbox(receiver);
     inbox.post(envelope, receiver);
     executeObjectInbox(inbox);
+
+    // if an await message, free the sender
+    if (envelope instanceof AwaitEnvelope) {
+      Object sender = context.object(envelope.from());
+      ObjectInbox senderInbox = inbox(sender);
+      senderInbox.onAwaitStart(envelope, context);
+      executeObjectInbox(senderInbox);
+    }
+
     return envelope.response();
   }
 

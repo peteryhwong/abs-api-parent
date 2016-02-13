@@ -1,7 +1,6 @@
 package abs.api;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -17,6 +16,25 @@ import java.util.concurrent.ThreadFactory;
  * @since 1.0
  */
 public interface Configuration {
+
+  /**
+   * The prefix to all {@link System} or environment
+   * configurations passed into the library.
+   */
+  String PROPERTY_PREFIX = "jabs.";
+
+  /**
+   * Enables debug mode in the library.
+   */
+  String PROPERTY_DEBUG = PROPERTY_PREFIX + "debug";
+
+  /**
+   * If enabled, the context switch of JVM threads over
+   * different processing cores/unit will be lowered as much as
+   * possible. <b>NOTE</b> that this feature is only available
+   * on UNIX platforms.
+   */
+  String PROPERTY_THREAD_MANAGEMENT = PROPERTY_PREFIX + "enableThreadManagement";
 
   /**
    * Provides the router of the context.
@@ -87,94 +105,21 @@ public interface Configuration {
   boolean isRemoteMessagingEnabled();
 
   /**
-   * Creates an instance of
-   * {@link abs.api.Configuration.ConfigurationBuilder} to build
-   * an instance of {@link abs.api.Configuration}.
+   * Does the configuration support optimized thread management?
+   * 
+   * @return
+   */
+  boolean isThreadManagementEnabled();
+
+  /**
+   * Creates an instance of {@link abs.api.ConfigurationBuilder}
+   * to build an instance of {@link abs.api.Configuration}.
    *
    * @return an instance of builder for a
    *         {@link abs.api.Configuration}
    */
   static ConfigurationBuilder newConfiguration() {
     return new ConfigurationBuilder();
-  }
-
-  /**
-   * A simple builder pattern for {@link Configuration}
-   */
-  static final class ConfigurationBuilder {
-
-    private ThreadFactory threadFactory = r -> new ContextThread(r);
-    private ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
-    private Router envelopeRouter = new LocalRouter();
-    private Opener envelopeOpener = new DefaultOpener();
-    private Inbox inbox = new ContextInbox(executorService);
-    private ReferenceFactory referenceFactory = ReferenceFactory.DEFAULT;
-    private boolean isLoggingEnabled = false;
-    private String logPath = LoggingRouter.DEFAULT_LOG_PATH;
-    private boolean isRemoteEnabled = false;
-
-    ConfigurationBuilder() {}
-
-    public ConfigurationBuilder withEnvelopeRouter(Router router) {
-      this.envelopeRouter = router;
-      return this;
-    }
-
-    public ConfigurationBuilder withEnvelopeOpener(Opener opener) {
-      this.envelopeOpener = opener;
-      return this;
-    }
-
-    public ConfigurationBuilder withInbox(Inbox inbox) {
-      this.inbox = inbox;
-      return this;
-    }
-
-    public ConfigurationBuilder withReferenceFactory(ReferenceFactory referenceFactory) {
-      this.referenceFactory = referenceFactory;
-      return this;
-    }
-
-    public ConfigurationBuilder withExecutorService(ExecutorService executorService) {
-      this.executorService = executorService;
-      return this;
-    }
-
-    public ConfigurationBuilder withThreadFactory(ThreadFactory threadFactory) {
-      this.executorService = Executors.newCachedThreadPool(threadFactory);
-      this.threadFactory = threadFactory;
-      return this;
-    }
-
-    public ConfigurationBuilder enableLogging() {
-      this.isLoggingEnabled = true;
-      return this;
-    }
-
-    public ConfigurationBuilder setLogPath(String logPath) {
-      this.logPath = logPath;
-      return this;
-    }
-
-    public ConfigurationBuilder enableRemoteMessaging() {
-      this.isRemoteEnabled = true;
-      return this;
-    }
-
-    public final Configuration build() {
-      return new SimpleConfiguration(envelopeRouter, envelopeOpener, inbox, referenceFactory,
-          executorService, threadFactory, isLoggingEnabled, logPath, isRemoteEnabled);
-    }
-
-    /**
-     * Build a {@link LocalContext}.
-     * 
-     * @return the {@link LocalContext} for this configuration
-     */
-    public Context buildContext() {
-      return new LocalContext(build());
-    }
-
   }
 
 }
