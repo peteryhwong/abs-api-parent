@@ -682,7 +682,7 @@ public final class Functional {
   }
 
   protected static <E> E next(Iterable<E> it) {
-    return it == null || it.iterator().hasNext() ? null : it.iterator().next();
+    return it == null || !it.iterator().hasNext() ? null : it.iterator().next();
   }
 
   protected static <E> boolean hastNext(Iterable<E> it) {
