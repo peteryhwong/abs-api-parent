@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -46,6 +47,8 @@ class ObjectInbox extends AbstractInbox
   private final AtomicReference<Envelope> current = new AtomicReference<>(null);
   // Queue of await messages to self/others
   private final Deque<Envelope> awq = new ConcurrentLinkedDeque<>();
+  // A lock to prevent multiple executions at the same over the queue
+  private final AtomicBoolean executing = new AtomicBoolean(false);
 
   /**
    * Ctor
@@ -71,11 +74,15 @@ class ObjectInbox extends AbstractInbox
   }
 
   public void run() {
+    if (!executing.compareAndSet(false, true)) {
+      return;
+    }
     for (Envelope envelope = get(); envelope != null; envelope = get()) {
       super.onOpen(envelope, this, receiver);
       EnveloperRunner runner = createEnvelopeRunner(envelope);
       runner.run();
     }
+    executing.getAndSet(false);
     Thread.yield();
   }
 

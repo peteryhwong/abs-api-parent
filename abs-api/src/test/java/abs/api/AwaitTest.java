@@ -278,7 +278,7 @@ public class AwaitTest {
     Gateway gateway = new Gateway(network);
     context.newActor("gateway", gateway);
 
-    final int size = random.nextInt(4) + 1;
+    final int size = random.nextInt(50) + 1;
     Callable<List<Long>> msg = () -> gateway.relay(size);
     Response<List<Long>> r = context.await(gateway, msg);
     assertThat(r).isNotNull();

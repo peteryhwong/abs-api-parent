@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import net.openhft.affinity.Affinity;
 
@@ -121,7 +122,11 @@ class ContextInbox extends AbstractInbox {
   }
 
   protected void execute() {
-    inboxes.values().stream().forEach(this::executeObjectInbox);
+    Stream<ObjectInbox> s = inboxes.values().stream();
+    if (inboxes.size() > 1000) {
+      s = s.parallel();
+    } 
+    s.filter(oi -> !oi.isProcessingEnvelope()).forEach(this::executeObjectInbox);
   }
 
   protected synchronized void executeObjectInbox(ObjectInbox oi) {
