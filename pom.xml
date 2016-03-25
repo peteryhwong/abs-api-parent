@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<prerequisites>
@@ -31,7 +32,7 @@
 
 		<version.jersey>2.22.1</version.jersey>
 		<version.jetty>9.3.6.v20151106</version.jetty>
-		<version.junit>4.12</version.junit>
+		<version.junit>5.0.0-ALPHA</version.junit>
 		<version.logback>1.1.3</version.logback>
 		<version.slf4j>1.7.13</version.slf4j>
 		<version.truth>0.28</version.truth>
@@ -56,6 +57,18 @@
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<dependencies>
+					<dependency>
+					   <groupId>org.junit</groupId>
+					   <artifactId>surefire-junit5</artifactId>
+					   <version>${version.junit}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -143,8 +156,8 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit</groupId>
+			<artifactId>junit5-api</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -156,15 +169,21 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${version.junit}</version>
-			</dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit5-api</artifactId>
+                <version>${version.junit}</version>
+            </dependency>
 			<dependency>
 				<groupId>com.google.truth</groupId>
 				<artifactId>truth</artifactId>
 				<version>${version.truth}</version>
+				<exclusions>
+				    <exclusion>
+				        <groupId>junit</groupId>
+				        <artifactId>junit</artifactId>
+				    </exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>

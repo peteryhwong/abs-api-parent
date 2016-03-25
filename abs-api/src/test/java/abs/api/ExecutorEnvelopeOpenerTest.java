@@ -1,6 +1,6 @@
 package abs.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.gen5.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import org.junit.Test;
+import org.junit.gen5.api.Test;
 
 /**
  * 

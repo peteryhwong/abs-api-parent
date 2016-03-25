@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
-import org.junit.Test;
+import org.junit.gen5.api.Test;
 
 import com.google.common.collect.Lists;
 

@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.gen5.api.Test;
 
 /**
  * Tests around "await" API.
