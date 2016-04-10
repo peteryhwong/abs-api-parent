@@ -1,9 +1,9 @@
 package abs.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.gen5.api.Assertions.assertEquals;
+import static org.junit.gen5.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.gen5.api.Test;
 
 /**
  * 

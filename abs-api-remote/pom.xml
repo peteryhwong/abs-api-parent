@@ -3,10 +3,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.crisposs</groupId>
 	<name>ABS Remote API</name>
 	<artifactId>abs-api-remote</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<url>https://github.com/CrispOSS/abs-api-parent/tree/master/abs-api-remote</url>
 
@@ -42,10 +40,6 @@
 	</build>
 
 	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
