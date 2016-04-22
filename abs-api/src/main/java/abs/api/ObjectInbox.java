@@ -43,8 +43,12 @@ class ObjectInbox extends AbstractInbox
   private final BlockingQueue<Envelope> unprocessed =
       new PriorityBlockingQueue<>(512, ENVELOPE_COMPARATOR);
 
-  private AtomicBoolean awaiting = new AtomicBoolean(false);
-  private Deque<Envelope> processing = new ConcurrentLinkedDeque<>();
+  // Current non-self non-await message from another actor
+  private final AtomicReference<Envelope> current = new AtomicReference<>(null);
+  // Queue of await messages to self/others
+  private final Deque<Envelope> awq = new ConcurrentLinkedDeque<>();
+  // A lock to prevent multiple executions at the same over the queue
+  private final AtomicBoolean executing = new AtomicBoolean(false);
 
   /**
    * Ctor
@@ -70,44 +74,46 @@ class ObjectInbox extends AbstractInbox
   }
 
   public void run() {
+    if (!executing.compareAndSet(false, true)) {
+      return;
+    }
     for (Envelope envelope = get(); envelope != null; envelope = get()) {
       super.onOpen(envelope, this, receiver);
       EnveloperRunner runner = createEnvelopeRunner(envelope);
       runner.run();
     }
+    executing.getAndSet(false);
     Thread.yield();
   }
 
   @Override
   public Envelope get() {
-    final Envelope envelope = nextEnvelope(unprocessed);
-    if (envelope == null) {
+    final Envelope e = nextEnvelope(unprocessed);
+    if (e == null) {
       return null;
-    }
-    if (envelope.isSelfEnvelope()) {
-      processing.push(envelope);
-      return envelope;
     }
     if (isProcessingEnvelope()) {
       return null;
     }
-    processing.push(envelope);
-    return envelope;
+    this.current.getAndSet(e);
+    return e;
   }
 
   @Override
   public void onOpen(Envelope envelope, Context context) {
     this.unprocessed.remove(envelope);
-    if (envelope instanceof AwaitEnvelope) {
-      notifyStartAwait(envelope, context);
-    }
+    // if (isAwaitEnvelope(envelope)) {
+    // notifyStartAwait(envelope, context);
+    // }
   }
 
   @Override
   public void onComplete(Envelope envelope, Context context) {
-    this.processing.remove(envelope);
-    if (envelope instanceof AwaitEnvelope) {
+    if (isAwaitEnvelope(envelope)) {
       notifyEndAwait(envelope, context);
+    }
+    if (isNormalEnvelope(envelope)) {
+      this.current.getAndSet(null);
     }
   }
 
@@ -120,19 +126,21 @@ class ObjectInbox extends AbstractInbox
   }
 
   protected void onAwaitStart(Envelope envelope, Context context) {
-    this.awaiting.getAndSet(true);
+    this.awq.push(envelope);
+    this.current.getAndSet(null);
   }
 
   protected void onAwaitEnd(Envelope envelope, Context context) {
-    this.awaiting.getAndSet(false);
+    this.awq.remove(envelope);
   }
 
   protected boolean isProcessingEnvelope() {
-    return processing.stream().anyMatch(this::isWorkEnvelope);
+    Envelope e = current.get();
+    return e != null && isNormalEnvelope(e);
   }
 
   protected boolean isAwaiting() {
-    return awaiting.get();
+    return this.awq.isEmpty() == false;
   }
 
   protected EnveloperRunner createEnvelopeRunner(Envelope envelope) {
@@ -173,15 +181,12 @@ class ObjectInbox extends AbstractInbox
     return env;
   }
 
-  private boolean isWorkEnvelope(Envelope e) {
-    // Any envelope that is not an await or a message to self
-    if (e instanceof AwaitEnvelope) {
-      return false;
-    }
-    if (e.isSelfEnvelope()) {
-      return false;
-    }
-    return true;
+  private boolean isNormalEnvelope(Envelope e) {
+    return e instanceof AwaitEnvelope == false && e.isSelfEnvelope() == false;
+  }
+
+  private boolean isAwaitEnvelope(Envelope e) {
+    return e instanceof AwaitEnvelope == true;
   }
 
 }

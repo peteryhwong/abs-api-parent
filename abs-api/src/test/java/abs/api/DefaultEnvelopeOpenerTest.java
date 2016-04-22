@@ -1,9 +1,10 @@
 package abs.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.gen5.api.Assertions.assertEquals;
+import static org.junit.gen5.api.Assertions.assertNotNull;
+import static org.junit.gen5.api.Assertions.assertNull;
+import static org.junit.gen5.api.Assertions.assertTrue;
+import static org.junit.gen5.api.Assertions.expectThrows;
 
 import java.net.URI;
 import java.util.UUID;
@@ -11,8 +12,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.gen5.api.BeforeEach;
+import org.junit.gen5.api.Test;
 
 /**
  * 
@@ -23,7 +24,7 @@ public class DefaultEnvelopeOpenerTest {
 
 	private Context context;
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		this.context = new LocalContext();
 	}
@@ -87,7 +88,7 @@ public class DefaultEnvelopeOpenerTest {
 		assertEquals(message, f.get());
 	}
 
-	@Test(expected = ExecutionException.class)
+	@Test
 	public void testExecuteWithException() throws Exception {
 		Reference from = context.newActor("a", new Object());
 		Reference to = context.newActor("b", new Object());
@@ -101,7 +102,7 @@ public class DefaultEnvelopeOpenerTest {
 		assertNotNull(f);
 		assertEquals(f, e.response());
 		assertTrue(f.isDone());
-		f.get();
+        expectThrows(ExecutionException.class, () -> f.get());
 	}
 
 	private class BehaviorActor implements Behavior, Actor {

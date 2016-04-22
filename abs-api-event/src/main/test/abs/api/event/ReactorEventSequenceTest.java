@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import org.junit.Test;
+import org.junit.gen5.api.Test;
 
 import reactor.core.Environment;
 import reactor.core.Reactor;
